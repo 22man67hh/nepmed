@@ -1,0 +1,66 @@
+[
+  {
+    "id": "1-1-1-1-2",
+    "questionText": "What is the dimensional formula for gravitational constant G?",
+    "options": [
+      "[M⁻¹ L³ T⁻²]",
+      "[M¹ L³ T⁻²]",
+      "[M⁻¹ L² T⁻³]",
+      "[M⁻² L³ T⁻¹]"
+    ],
+    "correctOptionIndex": 0,
+    "explanation": "Since F = G * m1 * m2 / r², G = F * r² / (m1 * m2). F has dimension [M L T⁻²], r² is [L²], m1*m2 is [M²]. Thus G is [M⁻¹ L³ T⁻²].",
+    "subject": "Physics",
+    "topic": "Mechanics",
+    "referenceYear": "2024",
+    "correctPercentage": 78
+  },
+  {
+    "id": "1-1-2-2-1",
+    "questionText": "Which of the following organic structures contains a coordinate covalent bond?",
+    "options": [
+      "CH3NO2 (Nitroethane)",
+      "CH4 (Methane)",
+      "C2H5OH (Ethanol)",
+      "CH3COOH (Acetic acid)"
+    ],
+    "correctOptionIndex": 0,
+    "explanation": "In nitro compounds like CH3NO2, the nitrogen atom forms a coordinate dative bond with one of the oxygen atoms.",
+    "subject": "Chemistry",
+    "topic": "Organic Chemistry",
+    "referenceYear": "2024",
+    "correctPercentage": 62
+  },
+  {
+    "id": "1-2-3-1-2",
+    "questionText": "The cell wall of plants is primarily composed of which macromolecule?",
+    "options": [
+      "Cellulose",
+      "Chitin",
+      "Peptidoglycan",
+      "Glycogen"
+    ],
+    "correctOptionIndex": 0,
+    "explanation": "Plant cell walls are made of cellulose (a polysaccharide of beta-glucose). Fungal walls are made of chitin, and bacterial walls are made of peptidoglycan.",
+    "subject": "Botany",
+    "topic": "Cytology",
+    "referenceYear": "2023",
+    "correctPercentage": 92
+  },
+  {
+    "id": "1-2-4-1-4",
+    "questionText": "Which hormone is responsible for triggering ovulation in the human menstrual cycle?",
+    "options": [
+      "Luteinizing Hormone (LH)",
+      "Follicle Stimulating Hormone (FSH)",
+      "Estrogen",
+      "Progesterone"
+    ],
+    "correctOptionIndex": 0,
+    "explanation": "A sudden surge in Luteinizing Hormone (LH surge) triggers ovulation (the release of the mature egg) on approximately day 14 of the cycle.",
+    "subject": "Zoology",
+    "topic": "Human Anatomy & Physiology",
+    "referenceYear": "2024",
+    "correctPercentage": 81
+  }
+]

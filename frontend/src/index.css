@@ -1,0 +1,380 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Space Grotesk", sans-serif;
+}
+
+/* Custom modern scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #090d16;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
+
+/* Custom form and checkbox inputs */
+input[type="checkbox"] {
+  accent-color: #10b981;
+}
+
+/* Light Theme Overrides */
+.light {
+  color-scheme: light;
+}
+
+.light body {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+.light .bg-slate-950 {
+  background-color: #f8fafc !important;
+}
+
+.light .bg-slate-900 {
+  background-color: #ffffff !important;
+}
+
+.light .bg-slate-850 {
+  background-color: #f8fafc !important;
+}
+
+.light .bg-slate-800 {
+  background-color: #f1f5f9 !important;
+}
+
+.light .bg-slate-900\/40 {
+  background-color: rgba(241, 245, 249, 0.4) !important;
+}
+
+.light .bg-slate-950\/20 {
+  background-color: #f1f5f9 !important;
+}
+
+.light .bg-slate-950\/30 {
+  background-color: #e2e8f0 !important;
+}
+
+.light .bg-slate-950\/40 {
+  background-color: #e2e8f0 !important;
+}
+
+.light .bg-slate-950\/50 {
+  background-color: #cbd5e1 !important;
+}
+
+.light .bg-slate-950\/60 {
+  background-color: #cbd5e1 !important;
+}
+
+.light .bg-slate-950\/75 {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+.light .bg-slate-800\/80 {
+  background-color: #e2e8f0 !important;
+}
+
+.light .bg-emerald-500\/5 {
+  background-color: rgba(16, 185, 129, 0.08) !important;
+}
+
+.light .bg-emerald-500\/10 {
+  background-color: rgba(16, 185, 129, 0.15) !important;
+}
+
+.light .bg-red-500\/5 {
+  background-color: rgba(239, 68, 68, 0.08) !important;
+}
+
+.light .bg-red-500\/10 {
+  background-color: rgba(239, 68, 68, 0.15) !important;
+}
+
+.light .border-slate-850 {
+  border-color: #e2e8f0 !important;
+}
+
+.light .bg-slate-900\/60 {
+  background-color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.light .bg-indigo-950\/20 {
+  background-color: rgba(99, 102, 241, 0.05) !important;
+}
+
+.light .bg-emerald-950\/20 {
+  background-color: rgba(16, 185, 129, 0.05) !important;
+}
+
+.light .border-slate-800 {
+  border-color: #e2e8f0 !important;
+}
+
+.light .border-slate-900 {
+  border-color: #f1f5f9 !important;
+}
+
+.light .border-slate-700 {
+  border-color: #cbd5e1 !important;
+}
+
+.light .text-slate-100 {
+  color: #0f172a !important;
+}
+
+.light .text-slate-200 {
+  color: #1e293b !important;
+}
+
+.light .text-slate-300 {
+  color: #334155 !important;
+}
+
+.light .text-slate-400 {
+  color: #64748b !important;
+}
+
+.light .text-slate-500 {
+  color: #94a3b8 !important;
+}
+
+.light .text-white {
+  color: #0f172a !important;
+}
+
+.light .hover\:bg-slate-800:hover {
+  background-color: #e2e8f0 !important;
+}
+
+.light .hover\:bg-slate-700:hover {
+  background-color: #e2e8f0 !important;
+}
+
+.light .hover\:text-white:hover {
+  color: #030712 !important;
+}
+
+.light .shadow-xl {
+  shadow-color: rgba(15, 23, 42, 0.05) !important;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.05), 0 8px 10px -6px rgba(15, 23, 42, 0.05) !important;
+}
+
+.light .bg-gradient-to-r {
+  background-image: none !important;
+  background-color: #ffffff !important;
+}
+
+.light .bg-gradient-to-b {
+  background-image: none !important;
+  background-color: #f1f5f9 !important;
+}
+
+.light .text-emerald-400 {
+  color: #059669 !important; /* Darker green for readability on white */
+}
+
+.light .border-slate-800 {
+  border-color: #e2e8f0 !important;
+}
+
+.light ::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+.light ::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+}
+
+.light ::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Specific overrides for MCQ Options & Explanations in Light Theme */
+.light .w-full.text-left.p-4.rounded-xl.border {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #1e293b !important;
+}
+
+.light .w-full.text-left.p-4.rounded-xl.border:hover {
+  background-color: #f8fafc !important;
+  border-color: #94a3b8 !important;
+}
+
+/* Selected option states (unanswered or general) */
+.light .border-indigo-500,
+.light .border-indigo-500.bg-indigo-500\/5 {
+  background-color: rgba(99, 102, 241, 0.08) !important;
+  border-color: #6366f1 !important;
+  color: #3730a3 !important;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2) !important;
+}
+
+.light .border-emerald-500.bg-emerald-500\/5.text-white {
+  background-color: rgba(16, 185, 129, 0.12) !important;
+  border-color: #10b981 !important;
+  color: #065f46 !important;
+}
+
+/* Circle badge letters inside option buttons (A, B, C, D) */
+.light .w-full.text-left.p-4.rounded-xl.border span.rounded-full {
+  background-color: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+  color: #475569 !important;
+}
+
+/* Explanations boxes: force a clear whitish background and solid dark slate/charcoal text */
+.light .bg-slate-950\/75,
+.light .bg-slate-950 {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+.light .bg-slate-950\/75 text-slate-300,
+.light .bg-slate-950\/75 .text-slate-300,
+.light .bg-slate-950\/75 div,
+.light .bg-slate-950\/75 p,
+.light .bg-slate-950\/75 span,
+.light .bg-slate-950\/75 li {
+  color: #1e293b !important;
+}
+
+/* Correct/Incorrect option styling overrides */
+.light .bg-emerald-500\/10,
+.light .bg-emerald-500\/5 {
+  background-color: rgba(16, 185, 129, 0.12) !important;
+  border-color: rgba(16, 185, 129, 0.4) !important;
+  color: #065f46 !important;
+}
+
+.light .bg-red-500\/10,
+.light .bg-red-500\/5 {
+  background-color: rgba(239, 68, 68, 0.1) !important;
+  border-color: rgba(239, 68, 68, 0.3) !important;
+  color: #991b1b !important;
+}
+
+/* Ensure text elements inside option buttons are dark */
+.light .w-full.text-left.p-4.rounded-xl.border span {
+  color: inherit !important;
+}
+
+.light .w-full.text-left.p-4.rounded-xl.border span.rounded-full {
+  color: #475569 !important;
+}
+
+/* Custom slider range styling for light/dark themes */
+input[type="range"] {
+  background-color: #090d16 !important;
+}
+
+.light input[type="range"] {
+  background-color: #cbd5e1 !important;
+}
+
+/* Spreadsheet Grid Light Mode Overrides */
+.light table input,
+.light table textarea {
+  color: #0f172a !important;
+}
+
+.light table select {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+.light table select option {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+.light table input::placeholder,
+.light table textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* Ensure that when editing (focused), the input box background is white and text is highly visible */
+.light table input:focus,
+.light table textarea:focus,
+.light .focus\:bg-slate-950:focus {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  box-shadow: 0 0 0 2px #10b981 !important;
+}
+
+/* Ensure white text whenever #7f22fe is used as background */
+.bg-\[\#7f22fe\],
+.bg-\[\#7F22FE\],
+[style*="#7f22fe" i],
+[style*="7f22fe" i],
+[style*="rgb(127, 34, 254)"],
+[style*="rgb(127,34,254)"] {
+  color: #ffffff !important;
+}
+
+.light .bg-\[\#7f22fe\],
+.light .bg-\[\#7F22FE\],
+.light [style*="#7f22fe" i],
+.light [style*="7f22fe" i],
+.light [style*="rgb(127, 34, 254)"],
+.light [style*="rgb(127,34,254)"] {
+  color: #ffffff !important;
+}
+
+.bg-\[\#7f22fe\] *,
+.bg-\[\#7F22FE\] *,
+[style*="#7f22fe" i] *,
+[style*="7f22fe" i] *,
+[style*="rgb(127, 34, 254)"] *,
+[style*="rgb(127,34,254)"] * {
+  --tw-text-opacity: 1 !important;
+  color: rgba(255, 255, 255, var(--tw-text-opacity)) !important;
+}
+
+.light .bg-\[\#7f22fe\] *,
+.light .bg-\[\#7F22FE\] *,
+.light [style*="#7f22fe" i] *,
+.light [style*="7f22fe" i] *,
+.light [style*="rgb(127, 34, 254)"] *,
+.light [style*="rgb(127,34,254)"] * {
+  --tw-text-opacity: 1 !important;
+  color: rgba(255, 255, 255, var(--tw-text-opacity)) !important;
+}
+
+/* Exclude active form inputs/textareas inside #7f22fe elements from being forced to white */
+.bg-\[\#7f22fe\] input,
+.bg-\[\#7f22fe\] textarea,
+.bg-\[\#7f22fe\] select,
+[style*="#7f22fe" i] input,
+[style*="#7f22fe" i] textarea,
+[style*="#7f22fe" i] select {
+  color: #0f172a !important;
+}
+
+/* Force standard Lucide/SVG icons to render as white on #7f22fe background */
+.bg-\[\#7f22fe\] svg,
+.bg-\[\#7F22FE\] svg,
+[style*="#7f22fe" i] svg,
+[style*="7f22fe" i] svg {
+  stroke: #ffffff !important;
+}
+
+
+

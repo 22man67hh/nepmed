@@ -1,0 +1,6 @@
+{
+  "name": "NepMed MCQ",
+  "description": "NepMedMCQ is Nepal's premier Multiple Choice Question preparation platform for MEC-UG, MEC-PG, NMCLE, KU, and Loksewa medical exams. Featuring timed mock tests, tutor explanations, progress tracking, and AI tutoring.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
