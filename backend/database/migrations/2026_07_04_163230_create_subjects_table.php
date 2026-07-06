@@ -17,7 +17,6 @@ return new class extends Migration
             $table->string('code')->nullable();
             $table->string('description')->nullable();
             $table->string('status')->default('active');
-            $table->string('slug')->nullable();
             $table->string('icon')->nullable();
             $table->timestamps();
         });
