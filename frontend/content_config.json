@@ -1295,6 +1295,13 @@
               "isActive": true
             }
           ]
+        },
+        {
+          "id": "sub-mec-ug-1783535354073",
+          "name": "ghhhg",
+          "description": "Custom dynamic folders active.",
+          "sets": [],
+          "components": []
         }
       ]
     },
@@ -1336,7 +1343,7 @@
     },
     {
       "id": "loksewa",
-      "name": "Loksewa",
+      "name": "Loksewas",
       "code": "loksewa",
       "description": "General Medical Officer and Healthcare Services exams",
       "subcategories": []

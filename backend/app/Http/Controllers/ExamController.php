@@ -7,12 +7,12 @@ use Illuminate\Http\Request;
 
 class ExamController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
-        //
+        return response()->json([
+            'status' => true,
+            'exams' => Exam::all()
+        ]);
     }
 
     /**
@@ -43,12 +43,13 @@ class ExamController extends Controller
         ], 201);
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show(string $id)
     {
-        //
+        $exam = Exam::findOrFail($id);
+        return response()->json([
+            'status' => true,
+            'exam' => $exam
+        ]);
     }
 
     /**

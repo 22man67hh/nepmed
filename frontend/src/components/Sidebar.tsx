@@ -22,14 +22,15 @@ import {
   Info,
   Dumbbell,
   CreditCard,
-  Gift
+  Gift,
+  Sliders
 } from "lucide-react";
 import { UserProfile, CMSContent } from "../types";
 
 interface SidebarProps {
   userProfile: UserProfile;
-  activeScreen: "dashboard" | "bookmarks" | "admin" | "history" | "leaderboard" | "forum" | "about" | "practice" | "set_practice" | "subscription" | "refer_earn";
-  setActiveScreen: (screen: "dashboard" | "bookmarks" | "admin" | "history" | "leaderboard" | "forum" | "about" | "practice" | "set_practice" | "subscription" | "refer_earn") => void;
+  activeScreen: "dashboard" | "bookmarks" | "admin" | "custom_admin" | "history" | "leaderboard" | "forum" | "about" | "practice" | "set_practice" | "subscription" | "refer_earn";
+  setActiveScreen: (screen: "dashboard" | "bookmarks" | "admin" | "custom_admin" | "history" | "leaderboard" | "forum" | "about" | "practice" | "set_practice" | "subscription" | "refer_earn") => void;
   targetExam: string;
   setTargetExam: (exam: string) => void;
   onLogout: () => void;
@@ -51,11 +52,24 @@ export default function Sidebar({
   onEditProfile,
   cmsContent
 }: SidebarProps) {
+  const [dbExams, setDbExams] = React.useState<any[]>([]);
+
+  React.useEffect(() => {
+    fetch("/api/exams")
+      .then(res => res.json())
+      .then(data => {
+        if (data.status && Array.isArray(data.exams)) {
+          setDbExams(data.exams);
+        }
+      })
+      .catch(err => console.error("Failed to load exams in sidebar:", err));
+  }, []);
+
   const examOptions = React.useMemo(() => {
-    if (cmsContent?.targetExams && cmsContent.targetExams.length > 0) {
-      return cmsContent.targetExams.map(exam => ({
-        value: exam.id,
-        label: exam.name || exam.code || exam.id
+    if (dbExams.length > 0) {
+      return dbExams.map(exam => ({
+        value: exam.slug || exam.id,
+        label: exam.name
       }));
     }
     return [
@@ -65,7 +79,7 @@ export default function Sidebar({
       { value: "ku-mcq", label: "KU MCQ (Kathmandu Univ)" },
       { value: "loksewa", label: "Loksewa Medical Exam" }
     ];
-  }, [cmsContent?.targetExams]);
+  }, [dbExams]);
 
   const handleExamChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setTargetExam(e.target.value);
@@ -142,7 +156,7 @@ export default function Sidebar({
                 { id: "history", label: cmsContent.sidebarLabels?.history || "My Report", enabled: true, order: 5 },
                 { id: "leaderboard", label: cmsContent.sidebarLabels?.leaderboard || "Leaderboard", enabled: true, order: 6 },
                 { id: "forum", label: cmsContent.sidebarLabels?.forum || "Discussion Forum", enabled: true, order: 7 },
-                { id: "subscription", label: cmsContent.sidebarLabels?.subscription || "Premium Subscription", enabled: true, order: 8 },
+                { id: "subscription", label: cmsContent.sidebarLabels?.subscription || "Premium Subscription", enabled: false, order: 8 },
                 { id: "refer_earn", label: cmsContent.sidebarLabels?.refer_earn || "Refer & Earn", enabled: true, order: 9 },
                 { id: "about", label: cmsContent.sidebarLabels?.about || "About Us & Support", enabled: true, order: 10 }
               ];
@@ -198,26 +212,29 @@ export default function Sidebar({
 
           {/* Admin Panels */}
           {(() => {
-            const adminItem = cmsContent.sidebarItems?.find(item => item.id === "admin") || { id: "admin", label: cmsContent.sidebarLabels?.admin || "Question Upload & Pricing", enabled: true, order: 8 };
-            if (!adminItem.enabled) return null;
+            const isAdmin = userProfile.role === "admin" || 
+                            userProfile.email?.toLowerCase().includes("admin") || 
+                            userProfile.name?.toLowerCase().includes("admin");
+console.log("isAdmin:", isAdmin);
+            if (!isAdmin) return null;
 
             return (
-              <div className="mt-8 space-y-1.5">
+              <div className="mt-8 space-y-1.5 font-sans">
                 <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-2 mb-2">Internal Admin</p>
                 
                 <button
                   onClick={() => {
-                    setActiveScreen("admin");
+                    setActiveScreen("custom_admin");
                     setIsSidebarOpen(false);
                   }}
                   className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
-                    activeScreen === "admin"
+                    activeScreen === "custom_admin"
                       ? "bg-violet-500/15 text-violet-400 border border-violet-500/20"
                       : "text-slate-400 hover:bg-slate-800/50 hover:text-white border border-transparent"
                   }`}
                 >
-                  <FolderLock className="w-4 h-4 shrink-0" />
-                  <span>{adminItem.label}</span>
+                  <Sliders className="w-4 h-4 shrink-0 animate-none" />
+                  <span>Premium Admin Room</span>
                 </button>
               </div>
             );

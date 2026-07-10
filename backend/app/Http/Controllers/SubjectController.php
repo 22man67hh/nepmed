@@ -6,12 +6,12 @@ use Illuminate\Http\Request;
 
 class SubjectController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
-        //
+        return response()->json([
+            'status' => true,
+            'subjects' => \App\Models\Subject::all()
+        ]);
     }
 
     /**
@@ -46,12 +46,13 @@ $subject = \App\Models\Subject::create($data);
 
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show(string $id)
     {
-        //
+        $subject = \App\Models\Subject::findOrFail($id);
+        return response()->json([
+            'status' => true,
+            'subject' => $subject
+        ]);
     }
 
     /**

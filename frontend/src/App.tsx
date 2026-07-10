@@ -34,6 +34,7 @@ import DashboardView from "./components/DashboardView";
 import ExamSpecificView from "./components/ExamSpecificView";
 import PracticeSession from "./components/PracticeSession";
 import AdminPanel from "./components/AdminPanel";
+import CustomAdminPanel from "./components/CustomAdminPanel";
 import BookmarksView from "./components/BookmarksView";
 import AITutorModal from "./components/AITutorModal";
 import TestHistoryView from "./components/TestHistoryView";
@@ -296,6 +297,35 @@ const INITIAL_CMS_CONTENT: CMSContent = {
   }
 };
 
+class LocalErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean; error: any }> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error: any) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error: any, errorInfo: any) {
+    console.error("LocalErrorBoundary caught an error", error, errorInfo);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="p-6 bg-slate-900 border border-slate-800 text-slate-100 rounded-2xl m-6 font-sans text-xs space-y-3 shadow-2xl">
+          <h2 className="text-sm font-extrabold uppercase text-rose-500 flex items-center gap-2">
+            <span>ðŸš¨ Premium Admin Room Crash Telemetry</span>
+          </h2>
+          <p className="font-bold text-slate-200">{String(this.state.error?.message || this.state.error)}</p>
+          <pre className="p-3 bg-slate-950 rounded overflow-x-auto text-[10px] text-slate-400 font-mono max-h-96">
+            {this.state.error?.stack}
+          </pre>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export default function App() {
   const [cmsContent, setCmsContent] = useState<CMSContent>(INITIAL_CMS_CONTENT);
 
@@ -370,6 +400,120 @@ export default function App() {
       const data = await response.json();
       if (data.success) {
         setCmsContent(newContent);
+
+        // Sync local CMS configurations (Exams & Subjects) to SQL Database in background
+        try {
+          // 1. Sync Target Exams
+          const examsRes = await fetch("/api/exams");
+          const examsData = await examsRes.json();
+          const currentDbExams = Array.isArray(examsData.exams) ? examsData.exams : [];
+          const examDbIdMap: Record<string, number> = {};
+
+          const targetExams = newContent.targetExams || [];
+          for (const exam of targetExams) {
+            const slug = exam.id.toLowerCase().replace(/[^a-z0-9]/g, "-");
+            const existing = currentDbExams.find((e: any) => e.slug === slug || e.name.toLowerCase() === exam.name.toLowerCase());
+            
+            let examDbId = null;
+            const payload = {
+              name: exam.name,
+              description: exam.description || `${exam.name} examination preparation modules.`,
+              status: "active"
+            };
+
+            if (existing) {
+              examDbId = existing.id;
+              await fetch(`/api/exams/${existing.id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+              });
+            } else {
+              const createRes = await fetch("/api/exams", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+              });
+              const createData = await createRes.json();
+              if (createData.status && createData.exam) {
+                examDbId = createData.exam.id;
+              }
+            }
+            if (examDbId) {
+              examDbIdMap[exam.id] = examDbId;
+            }
+          }
+
+          // Fetch fresh list of exams to get all database IDs mapped to slugs
+          const freshExamsRes = await fetch("/api/exams");
+          const freshExamsData = await freshExamsRes.json();
+          const freshDbExams = Array.isArray(freshExamsData.exams) ? freshExamsData.exams : [];
+          freshDbExams.forEach((e: any) => {
+            examDbIdMap[e.slug] = e.id;
+          });
+
+          // 2. Sync Subjects
+          const subjectsRes = await fetch("/api/subjects");
+          const subjectsData = await subjectsRes.json();
+          const currentDbSubjects = Array.isArray(subjectsData.subjects) ? subjectsData.subjects : [];
+
+          const subjectsToSync: Array<{ name: string; icon: string; weight: number; examSlug: string }> = [];
+
+          if (Array.isArray(newContent.mecUgClassification)) {
+            newContent.mecUgClassification.forEach((sub: any) => {
+              subjectsToSync.push({
+                name: sub.subject,
+                icon: sub.icon || "book",
+                weight: sub.weight || 0,
+                examSlug: sub.targetExam || "mec-ug"
+              });
+            });
+          }
+
+          if (Array.isArray(newContent.mecPgClassification)) {
+            newContent.mecPgClassification.forEach((sub: any) => {
+              subjectsToSync.push({
+                name: sub.subject,
+                icon: sub.icon || "book",
+                weight: sub.weight || 0,
+                examSlug: sub.targetExam || "mec-pg"
+              });
+            });
+          }
+
+          for (const sub of subjectsToSync) {
+            const slug = sub.name.toLowerCase().replace(/[^a-z0-9]/g, "-");
+            const examId = examDbIdMap[sub.examSlug] || null;
+            const existingSub = currentDbSubjects.find((s: any) => s.slug === slug || s.name.toLowerCase() === sub.name.toLowerCase());
+            
+            const payload = {
+              name: sub.name,
+              code: sub.name.substring(0, 10).toUpperCase().replace(/[^A-Z]/g, "S"),
+              description: `${sub.name} curriculum mapping.`,
+              status: "active",
+              icon: sub.icon,
+              weight: sub.weight,
+              exam_id: examId
+            };
+
+            if (existingSub) {
+              await fetch(`/api/subjects/${existingSub.uuid || existingSub.id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+              });
+            } else {
+              await fetch("/api/subjects", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+              });
+            }
+          }
+        } catch (syncErr) {
+          console.error("Failed to sync exams and subjects to Laravel database:", syncErr);
+        }
+
         return true;
       }
     } catch (err) {
@@ -402,7 +546,7 @@ export default function App() {
     return saved || "mec-ug";
   });
 
-  const [activeScreen, setActiveScreen] = useState<"dashboard" | "bookmarks" | "admin" | "history" | "leaderboard" | "forum" | "about" | "practice" | "set_practice" | "subscription" | "refer_earn">("dashboard");
+  const [activeScreen, setActiveScreen] = useState<"dashboard" | "bookmarks" | "admin" | "custom_admin" | "history" | "leaderboard" | "forum" | "about" | "practice" | "set_practice" | "subscription" | "refer_earn">("dashboard");
   const [activeSetId, setActiveSetId] = useState<string | null>(null);
   const [customWorkoutSet, setCustomWorkoutSet] = useState<QuestionSet | null>(null);
   const [customWorkoutMode, setCustomWorkoutMode] = useState<"timed" | "tutor" | null>(null);
@@ -785,7 +929,7 @@ export default function App() {
       localStorage.setItem("nepmed_question_sets", JSON.stringify(updatedSets));
       localStorage.setItem("nepmed_independent_questions", JSON.stringify(updatedIndependent));
       localStorage.setItem("nepmed_id_system_migrated_v3", "true");
-      console.log("í ½íº€ Pre-existing database questions successfully auto-migrated & retagged!");
+      console.log("ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Pre-existing database questions successfully auto-migrated & retagged!");
     }
   }, [allSets, independentQuestions]);
 
@@ -811,11 +955,28 @@ export default function App() {
     setExamPageState("browse"); // Show specific page in dashboard at first
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    const token = localStorage.getItem("nepmed_auth_token");
+    if (token) {
+      try {
+        await fetch("/api/logout", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          }
+        });
+      } catch (err) {
+        console.error("Failed to sign out from backend:", err);
+      }
+      localStorage.removeItem("nepmed_auth_token");
+    }
+
     setUserProfile({
       email: "",
       name: "",
       avatarUrl: "",
+      role: "",
       isLoggedIn: false,
       purchasedSetIds: []
     });
@@ -960,6 +1121,24 @@ export default function App() {
           cmsContent={cmsContent}
           onSaveCMSContent={handleSaveCMSContent}
         />
+      );
+    }
+
+    if (activeScreen === "custom_admin") {
+      return (
+        <LocalErrorBoundary>
+          <CustomAdminPanel 
+            allSets={allSets}
+            onSaveSets={setAllSets}
+            independentQuestions={independentQuestions}
+            onSaveIndependentQuestions={setIndependentQuestions}
+            userDraftQuestions={userDraftQuestions}
+            onSaveUserDraftQuestions={setUserDraftQuestions}
+            targetExam={targetExam}
+            cmsContent={cmsContent}
+            onSaveCMSContent={handleSaveCMSContent}
+          />
+        </LocalErrorBoundary>
       );
     }
 

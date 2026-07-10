@@ -79,73 +79,117 @@ export default function LoginScreen({ onLoginSuccess, cmsContent }: LoginScreenP
     setIsLoading(true);
 
     if (isSignUp) {
-      // REGISTER FLOW -> Calls send-otp api
+      // REGISTER FLOW -> Calls real register API
       try {
-        const response = await fetch("/api/auth/send-otp", {
+        const response = await fetch("/api/register", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: email.toLowerCase() })
+          body: JSON.stringify({ 
+            name: name,
+            email: email.toLowerCase(),
+            password: password,
+            password_confirmation: password
+          })
         });
         const data = await response.json();
         setIsLoading(false);
-        if (data.success) {
+        if (data.status || data.success) {
           setShowOtpScreen(true);
-          setSentViaEmail(data.sentViaEmail);
+          setSentViaEmail(true);
           setSimulatedOtp(data.simulatedOtp || "");
         } else {
-          setError(data.error || "Failed to trigger OTP email. Please try again.");
+          setError(data.message || data.error || (data.errors ? Object.values(data.errors).flat().join(" ") : "Failed to register. Please try again."));
         }
       } catch (err) {
         setIsLoading(false);
-        setError("Network error. Failed to dispatch OTP email. Please try again.");
+        setError("Network error. Failed to register. Please try again.");
       }
     } else {
-      // LOGIN FLOW -> directly sign in (bypass OTP for testing/convenience, since user requested saving user details and sending confirmation emails *with otp* on registration)
-      setTimeout(() => {
+      // LOGIN FLOW -> Calls real login API
+      try {
+        const response = await fetch("/api/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: email.toLowerCase(), password: password })
+        });
+        const data = await response.json();
         setIsLoading(false);
-        onLoginSuccess({
-          email: email.toLowerCase(),
-          name: email.split("@")[0].toUpperCase(),
-          avatarUrl: `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(email)}`,
-          isLoggedIn: true,
-          age: 24,
-          sex: "Male",
-          purchasedSetIds: ["mec-ug-2023", "nmcle-2023", "ku-mcq-mock-1"]
-        }, preferredExam);
-      }, 1200);
+        if (data.status || data.success) {
+          if (data.token) {
+            localStorage.setItem("nepmed_auth_token", data.token);
+          }
+          onLoginSuccess({
+            email: data.user?.email || email.toLowerCase(),
+            name: data.user?.name || email.split("@")[0].toUpperCase(),
+            avatarUrl: `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(email)}`,
+            isLoggedIn: true,
+            role: data.user?.role || data.role || undefined,
+            age: age || 24,
+            sex: sex || "Male",
+            purchasedSetIds: ["mec-ug-2023", "nmcle-2023", "ku-mcq-mock-1"]
+          }, preferredExam);
+        } else {
+          setError(data.message || data.error || "Invalid credentials. Please check and try again.");
+        }
+      } catch (err) {
+        setIsLoading(false);
+        setError("Network error. Failed to log in. Please try again.");
+      }
     }
   };
 
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setOtpError("");
-    if (!otpCode || otpCode.trim().length < 4) {
-      setOtpError("Please enter the complete secure verification OTP.");
+    if (!otpCode || otpCode.trim().length < 6) {
+      setOtpError("Please enter the complete secure 6-digit verification OTP.");
       return;
     }
 
     setOtpLoading(true);
     try {
-      const response = await fetch("/api/auth/verify-otp", {
+      const response = await fetch("/api/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.toLowerCase(), otp: otpCode })
       });
       const data = await response.json();
-      setOtpLoading(false);
       
-      if (data.success) {
-        onLoginSuccess({
-          email: email.toLowerCase(),
-          name: name,
-          avatarUrl: `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(email)}`,
-          isLoggedIn: true,
-          age: age,
-          sex: sex,
-          purchasedSetIds: ["mec-ug-2023", "nmcle-2023", "ku-mcq-mock-1"]
-        }, preferredExam);
+      if (data.status || data.success) {
+        // OTP verified successfully. Now log in automatically using their credentials to get the token!
+        try {
+          const loginResponse = await fetch("/api/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: email.toLowerCase(), password: password })
+          });
+          const loginData = await loginResponse.json();
+          setOtpLoading(false);
+
+          if (loginData.status || loginData.success) {
+            if (loginData.token) {
+              localStorage.setItem("nepmed_auth_token", loginData.token);
+            }
+            onLoginSuccess({
+              email: email.toLowerCase(),
+              name: loginData.user?.name || name,
+              avatarUrl: `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(email)}`,
+              isLoggedIn: true,
+              role: loginData.user?.role || loginData.role || undefined,
+              age: age,
+              sex: sex,
+              purchasedSetIds: ["mec-ug-2023", "nmcle-2023", "ku-mcq-mock-1"]
+            }, preferredExam);
+          } else {
+            setOtpError(loginData.message || "Failed to log in automatically after verification. Please log in manually.");
+          }
+        } catch (loginErr) {
+          setOtpLoading(false);
+          setOtpError("Authentication failed. Please try logging in manually.");
+        }
       } else {
-        setOtpError(data.error || "Incorrect OTP verification code. Please check and try again.");
+        setOtpLoading(false);
+        setOtpError(data.message || data.error || "Incorrect OTP verification code. Please check and try again.");
       }
     } catch (err) {
       setOtpLoading(false);
@@ -157,19 +201,19 @@ export default function LoginScreen({ onLoginSuccess, cmsContent }: LoginScreenP
     setOtpLoading(true);
     setOtpError("");
     try {
-      const response = await fetch("/api/auth/send-otp", {
+      const response = await fetch("/api/resend-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.toLowerCase() })
       });
       const data = await response.json();
       setOtpLoading(false);
-      if (data.success) {
+      if (data.status || data.success) {
         setSimulatedOtp(data.simulatedOtp || "");
-        setSentViaEmail(data.sentViaEmail);
+        setSentViaEmail(true);
         alert("OTP Resent successfully!");
       } else {
-        setOtpError("Failed to resend. Please try again.");
+        setOtpError(data.message || data.error || "Failed to resend. Please try again.");
       }
     } catch (e) {
       setOtpLoading(false);
@@ -180,16 +224,83 @@ export default function LoginScreen({ onLoginSuccess, cmsContent }: LoginScreenP
   const handleGoogleLogin = () => {
     setIsLoading(true);
     setError("");
-    setTimeout(() => {
+
+    const googleClientId = (import.meta as any).env?.VITE_GOOGLE_CLIENT_ID;
+    if (!googleClientId) {
+      console.warn("VITE_GOOGLE_CLIENT_ID is not configured. Bypassing Google OAuth with mock login for development.");
+      setTimeout(() => {
+        setIsLoading(false);
+        onLoginSuccess({
+          email: "subedisunil841@gmail.com",
+          name: "Dr. Sunil Subedi",
+          avatarUrl: "https://api.dicebear.com/7.x/adventurer/svg?seed=sunil",
+          isLoggedIn: true,
+          purchasedSetIds: ["mec-ug-2023", "nmcle-2023", "ku-mcq-mock-1"]
+        }, preferredExam);
+      }, 1000);
+      return;
+    }
+
+    if (typeof window === "undefined" || !(window as any).google) {
       setIsLoading(false);
-      onLoginSuccess({
-        email: "subedisunil841@gmail.com",
-        name: "Dr. Sunil Subedi",
-        avatarUrl: "https://api.dicebear.com/7.x/adventurer/svg?seed=sunil",
-        isLoggedIn: true,
-        purchasedSetIds: ["mec-ug-2023", "nmcle-2023", "ku-mcq-mock-1"]
-      }, preferredExam);
-    }, 1500);
+      setError("Google authentication service is still loading. Please wait a moment and try again.");
+      return;
+    }
+
+    try {
+      const client = (window as any).google.accounts.oauth2.initTokenClient({
+        client_id: googleClientId,
+        scope: "email profile openid",
+        callback: async (response: any) => {
+          if (response.error) {
+            setIsLoading(false);
+            setError("Google login was cancelled or failed: " + response.error);
+            return;
+          }
+
+          if (response.access_token) {
+            try {
+              const backendResponse = await fetch("/api/callback/google", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ token: response.access_token })
+              });
+              
+              const data = await backendResponse.json();
+              setIsLoading(false);
+
+              if (data.status || data.success) {
+                if (data.token) {
+                  localStorage.setItem("nepmed_auth_token", data.token);
+                }
+                
+                onLoginSuccess({
+                  email: data.user?.email || "user@nepmed.edu",
+                  name: data.user?.name || "Google User",
+                  avatarUrl: `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(data.user?.email || "google")}`,
+                  isLoggedIn: true,
+                  role: data.user?.role || data.role || undefined,
+                  purchasedSetIds: ["mec-ug-2023", "nmcle-2023", "ku-mcq-mock-1"]
+                }, preferredExam);
+              } else {
+                setError(data.message || "Failed to authenticate Google user on backend.");
+              }
+            } catch (err) {
+              setIsLoading(false);
+              setError("Network error communicating with server after Google sign-in.");
+            }
+          } else {
+            setIsLoading(false);
+            setError("No access token returned from Google.");
+          }
+        },
+      });
+
+      client.requestAccessToken();
+    } catch (e: any) {
+      setIsLoading(false);
+      setError("Error initializing Google login: " + e.message);
+    }
   };
 
   return (

@@ -1,0 +1,50 @@
+[
+  {
+    "id": "thread-1",
+    "title": "How to memorize the branches of the Internal Carotid Artery (ICA)?",
+    "content": "Hi everyone! I am struggling to recall all the branches of the cerebral part of the Internal Carotid Artery for my upcoming MEC-UG entrance. Does anyone have a solid, high-yield clinical mnemonic?",
+    "authorName": "Dr. Sunil Subedi",
+    "authorEmail": "subedi.sunil@nepmed.edu",
+    "authorAvatar": "https://api.dicebear.com/7.x/adventurer/svg?seed=sunil",
+    "category": "Anatomy",
+    "createdAt": "2026-07-04T18:28:24.292Z",
+    "replies": [
+      {
+        "id": "reply-1-1",
+        "content": "Hey Sunil! Yes, a classic high-yield mnemonic we use is: **'A Professional Surgeon Ought Many Pretty Clinical Things'**.\n\n- **A**: Anterior Choroidal Artery\n- **P**: Posterior Communicating Artery\n- **S**: Superior Hypophyseal Artery\n- **O**: Ophthalmic Artery\n- **M**: Middle Cerebral Artery (terminal branch)\n- **A**: Anterior Cerebral Artery (terminal branch)\n\nThis covers the cerebral segment branches perfectly. Keep focused on the Ophthalmic branch, they love asking about it in licensing exams!",
+        "authorName": "Prof. Dr. Ramesh Koirala",
+        "authorEmail": "koirala.ramesh@nepmed.edu",
+        "authorAvatar": "https://api.dicebear.com/7.x/adventurer/svg?seed=ramesh",
+        "createdAt": "2026-07-05T06:28:24.292Z"
+      },
+      {
+        "id": "reply-1-2",
+        "content": "This is super elegant! Thanks Prof. Ramesh. Memorizing this mnemonic made it so simple.",
+        "authorName": "Dr. Anjana Adhikari",
+        "authorEmail": "anjana.adhikari@nepmed.edu",
+        "authorAvatar": "https://api.dicebear.com/7.x/adventurer/svg?seed=anjana",
+        "createdAt": "2026-07-05T18:28:24.292Z"
+      }
+    ]
+  },
+  {
+    "id": "thread-2",
+    "title": "MEC-PG Eligibility & Internship Guidelines for 2026",
+    "content": "Is there any official update from the Medical Education Commission (MEC) regarding internship duration completion requirements for PG eligibility this year? Do we need exactly 12 months completed before registering?",
+    "authorName": "Dr. Niranjan Sharma",
+    "authorEmail": "sharma.niranjan@nepmed.edu",
+    "authorAvatar": "https://api.dicebear.com/7.x/adventurer/svg?seed=sharma",
+    "category": "MEC-PG Rules",
+    "createdAt": "2026-07-05T18:28:24.292Z",
+    "replies": [
+      {
+        "id": "reply-2-1",
+        "content": "Hello Dr. Niranjan. Yes, the current guidelines mandate that candidates must complete exactly 1 year (12 months) of regular rotatory internship and register with the NMC (temporary/permanent licensing) by the deadline specified in the application call. There are no exemptions as of the latest committee meeting.",
+        "authorName": "Prof. Dr. Ramesh Koirala",
+        "authorEmail": "koirala.ramesh@nepmed.edu",
+        "authorAvatar": "https://api.dicebear.com/7.x/adventurer/svg?seed=ramesh",
+        "createdAt": "2026-07-06T18:28:24.292Z"
+      }
+    ]
+  }
+]

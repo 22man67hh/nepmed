@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { 
   Dumbbell, 
   Clock, 
@@ -60,8 +60,31 @@ export default function PracticeView({
   onSaveSets,
   cmsContent
 }: PracticeViewProps) {
+  const [dbSubjects, setDbSubjects] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetch("/api/subjects")
+      .then(res => res.json())
+      .then(data => {
+        if (data.status && Array.isArray(data.subjects)) {
+          setDbSubjects(data.subjects);
+        }
+      })
+      .catch(err => console.error("Failed to fetch subjects in PracticeView:", err));
+  }, []);
+
   // Dynamically load UG subjects from CMS content, or fallback to static defaults
   const MEC_UG_CLASSIFICATION_DYNAMIC = useMemo(() => {
+    const matchingDbSubjects = dbSubjects.filter(sub => sub.exam_id === targetExam);
+    if (matchingDbSubjects.length > 0) {
+      return matchingDbSubjects.map(sub => ({
+        subject: sub.name,
+        icon: sub.icon || "book-open",
+        weight: sub.weight || 0,
+        topics: []
+      }));
+    }
+
     const raw = cmsContent.mecUgClassification || MEC_UG_CLASSIFICATION;
     let filtered = raw.filter(sub => sub.targetExam === targetExam);
     if (filtered.length === 0) {
@@ -73,10 +96,22 @@ export default function PracticeView({
         ...sub,
         topics: (sub.topics || []).filter(topic => topic.enabled !== false)
       }));
-  }, [cmsContent, targetExam]);
+  }, [cmsContent, targetExam, dbSubjects]);
 
   // Dynamically load PG subjects from CMS content, or fallback to static defaults
   const SUBJECTS_CLASSIFICATION_DYNAMIC = useMemo(() => {
+    const matchingDbSubjects = dbSubjects.filter(sub => sub.exam_id === targetExam);
+    if (matchingDbSubjects.length > 0) {
+      const grouped = { preclinical: [] as SubjectItem[], clinical: [] as SubjectItem[], short: [] as SubjectItem[] };
+      matchingDbSubjects.forEach(sub => {
+        const category = (sub.category || "preclinical") as "preclinical" | "clinical" | "short";
+        if (grouped[category]) {
+          grouped[category].push({ name: sub.name, icon: sub.icon || "book-open" });
+        }
+      });
+      return grouped;
+    }
+
     if (cmsContent.mecPgClassification && cmsContent.mecPgClassification.length > 0) {
       const grouped = { preclinical: [] as SubjectItem[], clinical: [] as SubjectItem[], short: [] as SubjectItem[] };
       let filtered = cmsContent.mecPgClassification.filter(item => item.targetExam === targetExam);
@@ -92,7 +127,7 @@ export default function PracticeView({
       return grouped;
     }
     return SUBJECTS_CLASSIFICATION;
-  }, [cmsContent, targetExam]);
+  }, [cmsContent, targetExam, dbSubjects]);
 
   // Dynamically calculate UG subject weights
   const MEC_UG_SUBJECT_WEIGHTS_DYNAMIC = useMemo(() => {

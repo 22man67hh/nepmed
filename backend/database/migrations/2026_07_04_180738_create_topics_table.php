@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('topics', function (Blueprint $table) {
             $table->id();
-              $table->foreignId('subject_id')->constrained()->onDelete('cascade');
+              $table->foreignUuid('subject_id')->constrained('subjects', 'uuid')->onDelete('cascade');
             $table->string('name');
             $table->string('icon')->nullable();
             $table->decimal('weight', 5, 2)->nullable();

@@ -6,5 +6,26 @@ use Illuminate\Database\Eloquent\Model;
 
 class QuestionSet extends Model
 {
-    //
+    protected $guarded = [];
+
+
+    public function questions()
+    {
+        return $this->hasMany(Question::class);
+    }
+
+    public function scopeFilter($query, array $filters)
+{
+    $query->when($filters['search'] ?? null, function ($query, $search) {
+        $query->where('name', 'like', '%' . $search . '%');
+    })
+    ->when($filters['exam_id'] ?? null, function ($query, $examId) {
+        $query->where('exam_id', $examId);
+    })
+    ->when($filters['isFree'] ?? null, function ($query, $isFree) {
+        $query->where('is_free', (bool)$isFree);
+    });
+
+    return $query;
+}
 }

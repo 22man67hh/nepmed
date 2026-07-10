@@ -19,6 +19,67 @@ const PORT = 3000;
 
 app.use(express.json());
 
+// Proxy specific routes to Laravel backend
+const BACKEND_URL = "http://127.0.0.1:8000";
+const proxyPrefixes = [
+  "/api/login",
+  "/api/logout",
+  "/api/register",
+  "/api/verify-otp",
+  "/api/resend-otp",
+  "/api/me",
+  "/api/callback/google",
+  "/api/subjects",
+  "/api/exams"
+];
+
+app.use(async (req, res, next) => {
+  const shouldProxy = proxyPrefixes.some(prefix => 
+    req.path === prefix || req.path.startsWith(prefix + "/")
+  );
+
+  if (shouldProxy) {
+    try {
+      const url = `${BACKEND_URL}${req.originalUrl || req.url}`;
+      
+      const headers: Record<string, string> = {};
+      for (const [key, value] of Object.entries(req.headers)) {
+        if (value !== undefined) {
+          headers[key] = Array.isArray(value) ? value.join(", ") : String(value);
+        }
+      }
+
+      headers["host"] = "127.0.0.1:8000";
+
+      const requestInit: RequestInit = {
+        method: req.method,
+        headers: headers,
+      };
+
+      if (!["GET", "HEAD"].includes(req.method)) {
+        requestInit.body = JSON.stringify(req.body);
+      }
+
+      const response = await fetch(url, requestInit);
+      
+      res.status(response.status);
+      response.headers.forEach((value, key) => {
+        if (key.toLowerCase() !== "content-encoding") {
+          res.setHeader(key, value);
+        }
+      });
+      
+      const responseText = await response.text();
+      res.send(responseText);
+    } catch (error: any) {
+      console.error(`Proxy error for path ${req.path}:`, error);
+      res.status(500).json({ error: "Failed to connect to backend API server", details: error.message });
+    }
+  } else {
+    next();
+  }
+});
+
 // Lazy-initialized Gemini client
 let aiInstance: GoogleGenAI | null = null;
 

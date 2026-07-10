@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
              $table->text('question_text');
             $table->text('explanation');
-            $table->foreignId('subject_id')->nullable()->constrained()->onDelete('set null');
+            $table->foreignUuid('subject_id')->nullable()->constrained('subjects', 'uuid')->onDelete('set null');
             $table->foreignId('topic_id')->nullable()->constrained()->onDelete('set null');
             $table->timestamps();
         });

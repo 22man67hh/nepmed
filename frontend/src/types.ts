@@ -62,6 +62,7 @@ export interface UserProfile {
   isLoggedIn: boolean;
   age?: number | string;
   sex?: string;
+  role?: string;
   subscription?: {
     examType: string;
     expiresAt: string; // ISO Date or "lifetime"

@@ -62,5 +62,20 @@
     "topic": "Human Anatomy & Physiology",
     "referenceYear": "2024",
     "correctPercentage": 81
+  },
+  {
+    "id": "1-1-1-1-3",
+    "questionText": "Calculate the equivalent resistance when three resistors of 6 ohms are connected in parallel.",
+    "options": [
+      "2 ohms",
+      "18 ohms",
+      "3 ohms",
+      "9 ohms"
+    ],
+    "correctOptionIndex": 0,
+    "explanation": "For parallel connection: 1/Req = 1/R1 + 1/R2 + 1/R3 = 1/6 + 1/6 + 1/6 = 3/6 = 1/2. Therefore Req = 2 ohms.",
+    "subject": "Physics",
+    "topic": "Electricity & Magnetism",
+    "referenceYear": "2025"
   }
 ]

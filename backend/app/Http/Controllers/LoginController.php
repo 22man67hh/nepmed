@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Mail;
+use Laravel\Socialite\Facades\Socialite;
 
 class LoginController extends Controller
 {
@@ -27,6 +29,12 @@ class LoginController extends Controller
         ]);
         if (Auth::attempt($request->only('email', 'password'))) {
             $user = Auth::user();
+            if($user->role != 'user') {
+                return response()->json([
+                    'message' => 'You are not a user',
+                    'status' => false
+                ],401);
+            }
             $token = $user->createToken('auth_token')->plainTextToken;
             return response()->json([
                 'message' => 'Login successful',
@@ -52,6 +60,36 @@ class LoginController extends Controller
         ]);
     }
 
+
+public function adminLogin(Request $request){
+
+    $request->validate([
+        'email' => 'required|email',
+        'password' => 'required|string',
+    ]);
+
+    if (Auth::attempt($request->only('email', 'password'))) {
+        $user = Auth::user();
+        if($user->role != 'admin') {
+            return response()->json([
+                'message' => 'You are not an admin',
+                'status' => false
+            ],401);
+        }
+        $token = $user->createToken('auth_token')->plainTextToken;
+        return response()->json([
+            'message' => 'Login successful',
+            'token' => $token,
+            'user' => $user,
+            'status' => true
+
+        ]);
+    }
+    return response()->json([
+        'message' => 'Invalid credentials',
+        'status' => false
+    ], 401);
+}
 
     public function me(Request $request)
     {
@@ -82,7 +120,8 @@ class LoginController extends Controller
         return response()->json([
             'message' => 'User registered successfully please check your email for OTP',
             'user' => $user,
-            'status' => true
+            'status' => true,
+            'simulatedOtp' => config('app.debug') ? $otp : null
         ]);
     }
 
@@ -98,6 +137,29 @@ class LoginController extends Controller
         Mail::to($email)->send(new \App\Mail\OtpMail($otp));
 
         return $otp;
+    }
+
+    public function resendOtp(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+        ]);
+
+        $user = \App\Models\User::where('email', $request->email)->first();
+        if (!$user) {
+            return response()->json([
+                'message' => 'User not found',
+                'status' => false
+            ], 404);
+        }
+
+        $otp = $this->sendOtp($user);
+
+        return response()->json([
+            'message' => 'OTP resent successfully',
+            'status' => true,
+            'simulatedOtp' => config('app.debug') ? $otp : null
+        ]);
     }
 
 
@@ -180,4 +242,39 @@ class LoginController extends Controller
     {
         //
     }
+
+    public function handleGoogleCallback(Request $request)
+    {
+        $request->validate([
+            'token' => 'required|string',
+        ]);
+
+        try {
+            $googleUser = Socialite::driver('google')->stateless()->userFromToken($request->token);
+            $user=User::updateOrCreate([
+                'email' => $googleUser->getEmail(),
+            ], [
+                'name' => $googleUser->getName(),
+                'google_id' => $googleUser->getId(),
+                'email_verified_at' => now(),
+                'role' => 'user',
+                'status' => 'active',
+
+            ]);
+
+            $token = $user->createToken('auth_token')->plainTextToken;
+            return response()->json([
+                'message' => 'Login successful',
+                'token' => $token,
+                'user' => $user,
+                'status' => true
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Error verifying Google token: ' . $e->getMessage(),
+                'status' => false
+            ], 500);
+        }
+    }
+
 }
