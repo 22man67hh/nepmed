@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { FolderOpen, Folder, ChevronRight, PlusCircle, FileText, X, Save, HelpCircle, Edit3, Trash2, CheckCircle2, UploadCloud } from "lucide-react";
 import { QuestionSet, Question } from "../../types";
-import { ALL_STANDARD_SUBJECTS, MEC_UG_CLASSIFICATION, generateQuestionIdForSubject } from "../../subjectsData";
 import RichTextEditor from "../RichTextEditor";
 
 interface SubjectFoldersPoolTabProps {
@@ -10,6 +9,8 @@ interface SubjectFoldersPoolTabProps {
   allSets: QuestionSet[];
   setMessage: (msg: string) => void;
   handleOpenCSVEditorForSubject: (sub: string) => void;
+  dbSubjects?: any[];
+  dbTopics?: any[];
 }
 
 // Helper to parse CSV
@@ -101,11 +102,80 @@ export const SubjectFoldersPoolTab: React.FC<SubjectFoldersPoolTabProps> = ({
   onSaveIndependentQuestions,
   allSets,
   setMessage,
-  handleOpenCSVEditorForSubject
+  handleOpenCSVEditorForSubject,
+  dbSubjects = [],
+  dbTopics = []
 }) => {
   // Folder Pool Navigation
   const [selectedSubjectFolder, setSelectedSubjectFolder] = useState<string | null>(null);
+  const [selectedTopicId, setSelectedTopicId] = useState<number | null>(null);
   const [adminTargetExam, setAdminTargetExam] = useState<"mec-ug" | "other">("mec-ug");
+
+  const [dbQuestions, setDbQuestions] = useState<Question[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalQuestions, setTotalQuestions] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const currentSubjectObj = dbSubjects.find(
+    (s) => s.name.toLowerCase() === selectedSubjectFolder?.toLowerCase()
+  );
+  const currentTopics = dbTopics.filter(
+    (t) => t.subject_id === currentSubjectObj?.uuid
+  );
+
+  const fetchQuestions = async (page = 1, topicId: number | null = null) => {
+    if (!selectedSubjectFolder) return;
+
+    const currentSubjectObj = dbSubjects.find(
+      (s) => s.name.toLowerCase() === selectedSubjectFolder.toLowerCase()
+    );
+    if (!currentSubjectObj) return;
+
+    setIsLoading(true);
+    try {
+      let url = `/api/questions?subject_id=${currentSubjectObj.uuid}&page=${page}`;
+      if (topicId) {
+        url += `&topic_id=${topicId}`;
+      }
+
+      const res = await fetch(url);
+      const data = await res.json();
+
+      if (res.ok && data.status) {
+        // Map database question models to frontend Question structure
+        const mapped = data.questions.data.map((dbQ: any) => {
+          const correctIndex = dbQ.options.findIndex((o: any) => o.is_correct || o.is_correct === 1 || o.is_correct === true);
+          return {
+            id: String(dbQ.id),
+            questionText: dbQ.question_text,
+            options: dbQ.options.sort((a: any, b: any) => a.option_index - b.option_index).map((o: any) => o.option_text),
+            correctOptionIndex: correctIndex !== -1 ? correctIndex : 0,
+            explanation: dbQ.explanation,
+            subject: selectedSubjectFolder,
+            topic: dbQ.topic ? dbQ.topic.name : "General"
+          };
+        });
+
+        setDbQuestions(mapped);
+        setCurrentPage(data.questions.current_page);
+        setTotalPages(data.questions.last_page);
+        setTotalQuestions(data.questions.total);
+      }
+    } catch (err) {
+      console.error("Failed to fetch questions:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  React.useEffect(() => {
+    if (selectedSubjectFolder) {
+      fetchQuestions(1, selectedTopicId);
+    } else {
+      setDbQuestions([]);
+    }
+  }, [selectedSubjectFolder, selectedTopicId]);
 
   // Creation Modals & Forms
   const [showCreateIndependentForm, setShowCreateIndependentForm] = useState(false);
@@ -143,53 +213,52 @@ export const SubjectFoldersPoolTab: React.FC<SubjectFoldersPoolTabProps> = ({
   const handleSaveEditIndependentQuestion = async () => {
     if (!activeEditIndependentId || !selectedSubjectFolder) return;
 
-    const updated = independentQuestions.map((q) => {
-      if (q.id === activeEditIndependentId) {
-        return {
-          ...q,
-          questionText: editIndQuestionText,
-          options: [...editIndOptions],
-          correctOptionIndex: editIndCorrectIdx,
-          explanation: editIndExplanation,
-          topic: editIndTopic
-        };
-      }
-      return q;
-    });
-
-    // Save to Database API
     try {
-      await fetch(`/api/admin/independent-questions/${activeEditIndependentId}`, {
+      const response = await fetch(`/api/questions/${activeEditIndependentId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           questionText: editIndQuestionText,
-          options: editIndOptions,
-          correctOptionIndex: editIndCorrectIdx,
           explanation: editIndExplanation,
-          topic: editIndTopic
+          topic: editIndTopic,
+          options: editIndOptions.map((opt, idx) => ({
+            optionText: opt || `Option ${idx + 1}`,
+            isCorrect: idx === editIndCorrectIdx,
+            optionIndex: idx
+          }))
         })
       });
+
+      const data = await response.json();
+      if (response.ok && data.status) {
+        setMessage(`Successfully updated MCQ Question #${activeEditIndependentId}`);
+        fetchQuestions(currentPage, selectedTopicId);
+        setActiveEditIndependentId(null);
+      } else {
+        alert(data.message || "Failed to update question.");
+      }
     } catch (e) {
       console.error(e);
+      alert("Error saving question changes.");
     }
-
-    onSaveIndependentQuestions(updated);
-    setActiveEditIndependentId(null);
-    setMessage(`Successfully updated MCQ Question #${activeEditIndependentId}`);
   };
 
   const handleDeleteIndependentQuestion = async (id: string) => {
     if (window.confirm(`Are you sure you want to permanently delete Question #${id}?`)) {
       try {
-        await fetch(`/api/admin/independent-questions/${id}`, {
+        const response = await fetch(`/api/questions/${id}`, {
           method: "DELETE"
         });
+        if (response.ok) {
+          setMessage(`Successfully deleted MCQ Question #${id}`);
+          fetchQuestions(currentPage, selectedTopicId);
+        } else {
+          alert("Failed to delete question.");
+        }
       } catch (e) {
         console.error(e);
+        alert("Error connecting to backend API.");
       }
-      onSaveIndependentQuestions(independentQuestions.filter(q => q.id !== id));
-      setMessage(`Successfully deleted MCQ Question #${id}`);
     }
   };
 
@@ -197,89 +266,136 @@ export const SubjectFoldersPoolTab: React.FC<SubjectFoldersPoolTabProps> = ({
     e.preventDefault();
     if (!newIndQuestionText.trim() || !selectedSubjectFolder) return;
 
-    const allSetsQuestions = allSets.flatMap(s => s.questions);
-    const newId = generateQuestionIdForSubject(
-      selectedSubjectFolder,
-      newIndTopic || "General",
-      independentQuestions,
-      allSetsQuestions
+    const currentSubjectObj = dbSubjects.find(
+      (s) => s.name.toLowerCase() === selectedSubjectFolder.toLowerCase()
     );
 
-    const newQ: Question = {
-      id: newId,
-      questionText: newIndQuestionText,
-      options: [...newIndOptions],
-      correctOptionIndex: newIndCorrectIdx,
-      explanation: newIndExplanation,
-      subject: selectedSubjectFolder,
-      topic: newIndTopic || "General"
-    };
-
-    // Save to Backend Database API
-    try {
-      await fetch("/api/admin/independent-questions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newQ)
-      });
-    } catch (error) {
-      console.error(error);
+    if (!currentSubjectObj) {
+      alert(`Subject '${selectedSubjectFolder}' not found in database.`);
+      return;
     }
 
-    onSaveIndependentQuestions([...independentQuestions, newQ]);
+    const payload = {
+      subject_id: currentSubjectObj.uuid,
+      questions: [
+        {
+          questionText: newIndQuestionText,
+          explanation: newIndExplanation,
+          topicName: newIndTopic || "General",
+          topic_id: null,
+          options: newIndOptions.map((opt, idx) => ({
+            optionText: opt || `Option ${idx + 1}`,
+            isCorrect: idx === newIndCorrectIdx,
+            optionIndex: idx
+          }))
+        }
+      ]
+    };
 
-    setNewIndQuestionText("");
-    setNewIndOptions(["", "", "", ""]);
-    setNewIndExplanation("");
-    setShowCreateIndependentForm(false);
-    setMessage(`Successfully added live MCQ to ${selectedSubjectFolder} Folder Pool under ID #${newId}!`);
+    try {
+      const response = await fetch("/api/questions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      const responseData = await response.json();
+
+      if (response.ok && responseData.status) {
+        setNewIndQuestionText("");
+        setNewIndOptions(["", "", "", ""]);
+        setNewIndExplanation("");
+        setShowCreateIndependentForm(false);
+        setMessage(`Successfully added live MCQ to ${selectedSubjectFolder} Folder Pool!`);
+        fetchQuestions(1, selectedTopicId);
+      } else {
+        alert(responseData.message || "Failed to add question.");
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Error connecting to backend API.");
+    }
   };
 
-  const isUgSubject = ["Physics", "Chemistry", "Botany", "Zoology", "MAT"].includes(selectedSubjectFolder || "");
-  const matchingUgCategory = MEC_UG_CLASSIFICATION.find(cat => cat.subject === selectedSubjectFolder);
-  const ugTopics = matchingUgCategory ? matchingUgCategory.topics.map(t => t.name) : [];
+  // Derive topics from DB (filter by current selected subject)
+  const currentSubjectDbObj = dbSubjects.find(
+    (s) => s.name?.toLowerCase() === selectedSubjectFolder?.toLowerCase()
+  );
+  const currentSubjectTopics = dbTopics.filter(
+    (t) => t.subject_id === currentSubjectDbObj?.uuid || t.subject_id === currentSubjectDbObj?.id
+  );
+  const hasTopics = currentSubjectTopics.length > 0;
 
   const handleAdminBulkCSVSubmit = async () => {
     if (adminBulkParsedQuestions.length === 0 || !selectedSubjectFolder) return;
 
-    const topicValue = isUgSubject ? adminBulkTopic : "General";
-    let tempIndependent = [...independentQuestions];
-    const allSetsQuestions = allSets.flatMap(s => s.questions);
+    const currentSubjectObj = dbSubjects.find(
+      (s) => s.name.toLowerCase() === selectedSubjectFolder?.toLowerCase()
+    );
 
-    const finalQuestions = adminBulkParsedQuestions.map((q) => {
-      const newId = generateQuestionIdForSubject(
-        selectedSubjectFolder,
-        topicValue,
-        tempIndependent,
-        allSetsQuestions
-      );
-      const newQ = {
-        ...q,
-        id: newId,
-        subject: selectedSubjectFolder,
-        topic: topicValue
-      };
-      tempIndependent.push(newQ);
-      return newQ;
-    });
-
-    // Save to Backend Database
-    try {
-      await fetch("/api/admin/bulk-publish-independent", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ questions: finalQuestions })
-      });
-    } catch (e) {
-      console.error(e);
+    if (!currentSubjectObj) {
+      alert(`Subject '${selectedSubjectFolder}' not found in database.`);
+      return;
     }
 
-    onSaveIndependentQuestions(tempIndependent);
+    const topicValue = hasTopics ? adminBulkTopic : "General";
 
-    setAdminBulkParsedQuestions([]);
-    setAdminBulkFileError("");
-    setShowCreateIndependentForm(false);
-    setMessage(`🚀 Successfully bulk uploaded and published ${finalQuestions.length} MCQs into ${selectedSubjectFolder} Folder Pool!`);
+    const payload = {
+      subject_id: currentSubjectObj.uuid,
+      questions: adminBulkParsedQuestions.map((q) => ({
+        questionText: q.questionText,
+        explanation: q.explanation,
+        topicName: topicValue,
+        topic_id: null,
+        options: q.options.map((opt, idx) => ({
+          optionText: opt || `Option ${idx + 1}`,
+          isCorrect: idx === q.correctOptionIndex,
+          optionIndex: idx
+        }))
+      }))
+    };
+
+    try {
+      setMessage("⏳ Saving questions to pool database...");
+
+      const response = await fetch("/api/questions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      const responseData = await response.json();
+
+      if (response.ok && responseData.status) {
+        const importedQuestions = responseData.questions.map((dbQ: any) => {
+          const correctIndex = dbQ.options.findIndex((o: any) => o.is_correct || o.is_correct === 1 || o.is_correct === true);
+          return {
+            id: String(dbQ.id),
+            questionText: dbQ.question_text,
+            options: dbQ.options.sort((a: any, b: any) => a.option_index - b.option_index).map((o: any) => o.option_text),
+            correctOptionIndex: correctIndex !== -1 ? correctIndex : 0,
+            explanation: dbQ.explanation,
+            subject: selectedSubjectFolder,
+            topic: topicValue
+          };
+        });
+
+        onSaveIndependentQuestions([...independentQuestions, ...importedQuestions]);
+        setAdminBulkParsedQuestions([]);
+        setAdminBulkFileError("");
+        setShowCreateIndependentForm(false);
+        setMessage(`🚀 Successfully bulk uploaded and saved ${importedQuestions.length} MCQs into database pool under ${selectedSubjectFolder}!`);
+      } else {
+        setMessage("");
+        const errorMsg = responseData.message || "Failed to save questions.";
+        const details = responseData.errors ? "\n\nDetails:\n" + responseData.errors.join("\n") : "";
+        alert(`${errorMsg}${details}`);
+      }
+    } catch (e) {
+      setMessage("");
+      alert("Error connecting to backend API.");
+      console.error(e);
+    }
   };
 
   const handleAdminBulkCSVUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -327,80 +443,85 @@ export const SubjectFoldersPoolTab: React.FC<SubjectFoldersPoolTabProps> = ({
               </p>
             </div>
             {/* Target Exam Focus Selector */}
-            <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-850 shrink-0">
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-2 select-none">Focus Exam:</span>
-              <button
-                type="button"
-                onClick={() => {
-                  setAdminTargetExam("mec-ug");
-                  setSelectedSubjectFolder(null);
-                }}
-                className={`px-3 py-1.5 rounded-lg text-[11px] font-extrabold transition-all cursor-pointer ${
-                  adminTargetExam === "mec-ug"
-                    ? "bg-violet-600 text-white shadow"
-                    : "text-slate-400 hover:text-slate-200"
-                }`}
-              >
-                MEC-UG
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setAdminTargetExam("other");
-                  setSelectedSubjectFolder(null);
-                }}
-                className={`px-3 py-1.5 rounded-lg text-[11px] font-extrabold transition-all cursor-pointer ${
-                  adminTargetExam !== "mec-ug"
-                    ? "bg-violet-600 text-white shadow"
-                    : "text-slate-400 hover:text-slate-200"
-                }`}
-              >
-                Others (PG & Licensing)
-              </button>
-            </div>
+           
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {(adminTargetExam === "mec-ug"
-              ? ["Physics", "Chemistry", "Botany", "Zoology", "MAT"]
-              : ALL_STANDARD_SUBJECTS
-            ).map((sub) => {
-              const qCount = independentQuestions.filter(q => q.subject === sub).length;
-              return (
-                <button
-                  type="button"
-                  key={sub}
-                  onClick={() => {
-                    setSelectedSubjectFolder(sub);
-                    setCreationMode("interactive");
-                    setAdminBulkParsedQuestions([]);
-                    setAdminBulkFileError("");
-                    const ugCat = MEC_UG_CLASSIFICATION.find(c => c.subject === sub);
-                    if (ugCat && ugCat.topics.length > 0) {
-                      setNewIndTopic(ugCat.topics[0].name);
-                      setAdminBulkTopic(ugCat.topics[0].name);
+            {(() => {
+              // Filter DB subjects by selected exam mode
+              const mecUgExam = dbSubjects.length > 0
+                ? (() => {
+                    // Find the mec-ug exam id from the subjects' connected exams
+                    // We filter dbSubjects based on the adminTargetExam
+                    if (adminTargetExam === "mec-ug") {
+                      // Show subjects whose linked exam slug is "mec-ug"
+                      return dbSubjects.filter(s => {
+                        if (!s.exam_id) return false;
+                        const linkedExam = (window as any).__dbExams?.find?.((e: any) => e.id === s.exam_id);
+                        return linkedExam ? (linkedExam.slug === "mec-ug" || linkedExam.code === "mec-ug") : false;
+                      });
                     } else {
-                      setNewIndTopic("");
-                      setAdminBulkTopic("");
+                      // Show subjects whose linked exam is NOT mec-ug
+                      return dbSubjects.filter(s => {
+                        if (!s.exam_id) return true;
+                        const linkedExam = (window as any).__dbExams?.find?.((e: any) => e.id === s.exam_id);
+                        return linkedExam ? !(linkedExam.slug === "mec-ug" || linkedExam.code === "mec-ug") : true;
+                      });
                     }
-                  }}
-                  className="text-left bg-slate-900 hover:bg-slate-855 border border-slate-800 hover:border-violet-500/50 p-5 rounded-2xl transition-all cursor-pointer group flex items-start gap-4 shadow-md"
-                >
-                  <div className="p-3 bg-amber-500/10 rounded-xl group-hover:bg-violet-500/10 text-amber-400 group-hover:text-violet-400 transition-colors shrink-0">
-                    <Folder className="w-6 h-6 fill-amber-400/10 group-hover:fill-violet-400/10" />
-                  </div>
-                  <div className="min-w-0 flex-1 py-1">
-                    <p className="text-sm font-bold text-white group-hover:text-violet-300 transition-colors truncate">
-                      {sub} Folder
-                    </p>
-                    <p className="text-xs text-slate-400 mt-0.5">
-                      {qCount} {qCount === 1 ? "MCQ" : "MCQs"} cataloged
-                    </p>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-violet-400 self-center transition-transform group-hover:translate-x-0.5 shrink-0" />
-                </button>
-              );
-            })}
+                  })()
+                : [];
+
+              const subjectsToShow = mecUgExam.length > 0 ? mecUgExam : dbSubjects;
+
+              return subjectsToShow.map((subObj) => {
+                const sub = subObj.name;
+                const qCount = totalQuestions > 0 && selectedSubjectFolder === sub ? totalQuestions : 0;
+                return (
+                  <button
+                    type="button"
+                    key={subObj.uuid || subObj.id || sub}
+                    onClick={() => {
+                      setSelectedSubjectFolder(sub);
+                      setCreationMode("interactive");
+                      setAdminBulkParsedQuestions([]);
+                      setAdminBulkFileError("");
+                      // Set default topic from DB topics for this subject
+                      const subTopics = dbTopics.filter(
+                        (t) => t.subject_id === subObj.uuid || t.subject_id === subObj.id
+                      );
+                      if (subTopics.length > 0) {
+                        setNewIndTopic(subTopics[0].name);
+                        setAdminBulkTopic(subTopics[0].name);
+                      } else {
+                        setNewIndTopic("");
+                        setAdminBulkTopic("");
+                      }
+                    }}
+                    className="text-left bg-slate-900 hover:bg-slate-855 border border-slate-800 hover:border-violet-500/50 p-5 rounded-2xl transition-all cursor-pointer group flex items-start gap-4 shadow-md"
+                  >
+                    <div className="p-3 bg-amber-500/10 rounded-xl group-hover:bg-violet-500/10 text-amber-400 group-hover:text-violet-400 transition-colors shrink-0">
+                      <Folder className="w-6 h-6 fill-amber-400/10 group-hover:fill-violet-400/10" />
+                    </div>
+                    <div className="min-w-0 flex-1 py-1">
+                      <p className="text-sm font-bold text-white group-hover:text-violet-300 transition-colors truncate">
+                        {sub} Folder
+                      </p>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        {qCount} {qCount === 1 ? "MCQ" : "MCQs"} cataloged
+                      </p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-violet-400 self-center transition-transform group-hover:translate-x-0.5 shrink-0" />
+                  </button>
+                );
+              });
+            })()}
+            {dbSubjects.length === 0 && (
+              <div className="col-span-3 text-center py-12 text-slate-500">
+                <Folder className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                <p className="text-sm font-bold">No subjects found in database.</p>
+                <p className="text-xs mt-1">Add subjects from the Subjects tab first.</p>
+              </div>
+            )}
           </div>
         </div>
       ) : (
@@ -505,7 +626,7 @@ export const SubjectFoldersPoolTab: React.FC<SubjectFoldersPoolTabProps> = ({
                       />
                     </div>
 
-                    {isUgSubject ? (
+                    {hasTopics ? (
                       <div>
                         <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
                           Syllabus Topic Tag
@@ -515,8 +636,9 @@ export const SubjectFoldersPoolTab: React.FC<SubjectFoldersPoolTabProps> = ({
                           onChange={(e) => setNewIndTopic(e.target.value)}
                           className="w-full bg-slate-955 border border-slate-800 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-violet-500 font-bold"
                         >
-                          {ugTopics.map(t => (
-                            <option key={t} value={t}>{t}</option>
+                          <option value="">— Select Topic —</option>
+                          {currentSubjectTopics.map(t => (
+                            <option key={t.id} value={t.name}>{t.name}</option>
                           ))}
                         </select>
                       </div>
@@ -600,7 +722,7 @@ export const SubjectFoldersPoolTab: React.FC<SubjectFoldersPoolTabProps> = ({
                 </form>
               ) : (
                 <div className="space-y-4">
-                  {isUgSubject && (
+                  {hasTopics && (
                     <div className="max-w-xs">
                       <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
                         Select Topic Tag for Bulk Upload
@@ -610,8 +732,9 @@ export const SubjectFoldersPoolTab: React.FC<SubjectFoldersPoolTabProps> = ({
                         onChange={(e) => setAdminBulkTopic(e.target.value)}
                         className="w-full bg-slate-955 border border-slate-800 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-violet-500 font-bold"
                       >
-                        {ugTopics.map(t => (
-                          <option key={t} value={t}>{t}</option>
+                        <option value="">— Select Topic —</option>
+                        {currentSubjectTopics.map(t => (
+                          <option key={t.id} value={t.name}>{t.name}</option>
                         ))}
                       </select>
                     </div>
@@ -673,211 +796,275 @@ export const SubjectFoldersPoolTab: React.FC<SubjectFoldersPoolTabProps> = ({
               )}
             </div>
           )}
+          {/* Topic Filter Bar */}
+          {currentTopics.length > 0 && (
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-slate-900 border border-slate-800 p-4 rounded-2xl">
+              <div className="flex items-center gap-3 w-full sm:w-auto">
+                <span className="text-xs font-bold text-slate-400 shrink-0">Filter by Topic:</span>
+                <select
+                  value={selectedTopicId || ""}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setSelectedTopicId(val ? Number(val) : null);
+                  }}
+                  className="bg-slate-955 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-violet-500 font-bold w-full sm:w-auto min-w-[200px]"
+                >
+                  <option value="">All Topics</option>
+                  {currentTopics.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                {isLoading ? "Loading questions..." : `Found ${totalQuestions} cataloged MCQs`}
+              </div>
+            </div>
+          )}
 
           {/* Subject MCQs Chronological List */}
           <div className="space-y-4">
-            {independentQuestions.filter(q => q.subject === selectedSubjectFolder).length === 0 ? (
+            {isLoading ? (
+              <div className="space-y-4">
+                {[1, 2, 3].map((n) => (
+                  <div key={n} className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4 animate-pulse">
+                    <div className="h-4 bg-slate-800 rounded w-1/4"></div>
+                    <div className="h-6 bg-slate-800 rounded w-3/4"></div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="h-10 bg-slate-800 rounded"></div>
+                      <div className="h-10 bg-slate-800 rounded"></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : dbQuestions.length === 0 ? (
               <div className="text-center py-12 bg-slate-955 border border-slate-850 rounded-2xl">
                 <HelpCircle className="w-10 h-10 text-slate-600 mx-auto mb-3" />
-                <p className="text-white text-sm font-bold">No Questions in this Folder</p>
+                <p className="text-white text-sm font-bold">No Questions in this Topic/Folder</p>
                 <p className="text-slate-400 text-xs mt-1">
                   Click the create button above to add your first high-yield MCQ to {selectedSubjectFolder}!
                 </p>
               </div>
             ) : (
-              independentQuestions
-                .filter(q => q.subject === selectedSubjectFolder)
-                .sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true, sensitivity: 'base' }))
-                .map((q) => {
-                  const isEditing = activeEditIndependentId === q.id;
-                  return (
-                    <div key={q.id} className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-md animate-in fade-in duration-200">
-                      {isEditing ? (
-                        <div className="p-6 space-y-4 bg-slate-900">
-                          <div className="flex justify-between items-center border-b border-slate-800 pb-3">
-                            <h4 className="text-xs font-bold text-violet-400 font-mono">
-                              ✏️ EDITING MCQ QUESTION: {q.id}
-                            </h4>
+              dbQuestions.map((q) => {
+                const isEditing = activeEditIndependentId === q.id;
+                return (
+                  <div key={q.id} className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-md animate-in fade-in duration-200">
+                    {isEditing ? (
+                      <div className="p-6 space-y-4 bg-slate-900">
+                        <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+                          <h4 className="text-xs font-bold text-violet-400 font-mono">
+                            ✏️ EDITING MCQ QUESTION: {q.id}
+                          </h4>
+                          <button
+                            type="button"
+                            onClick={() => setActiveEditIndependentId(null)}
+                            className="text-slate-400 hover:text-white"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+
+                        <div className="space-y-4">
+                          <div>
+                            <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1.5">Question Text</label>
+                            <RichTextEditor value={editIndQuestionText} onChange={setEditIndQuestionText} />
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {hasTopics ? (
+                              <div>
+                                <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1.5 font-mono">Topic Tag</label>
+                                <select
+                                  value={editIndTopic}
+                                  onChange={(e) => setEditIndTopic(e.target.value)}
+                                  className="w-full bg-slate-955 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-violet-500 font-bold"
+                                >
+                                  <option value="">— Select Topic —</option>
+                                  {currentSubjectTopics.map(t => (
+                                    <option key={t.id} value={t.name}>{t.name}</option>
+                                  ))}
+                                </select>
+                              </div>
+                            ) : null}
+                            <div>
+                              <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1.5">Correct Option Index</label>
+                              <select
+                                value={editIndCorrectIdx}
+                                onChange={(e) => setEditIndCorrectIdx(parseInt(e.target.value))}
+                                className="w-full bg-slate-955 border border-slate-800 rounded-xl p-2 text-xs text-white focus:outline-none font-bold"
+                              >
+                                <option value={0}>Option A is Correct</option>
+                                <option value={1}>Option B is Correct</option>
+                                <option value={2}>Option C is Correct</option>
+                                <option value={3}>Option D is Correct</option>
+                              </select>
+                            </div>
+                          </div>
+
+                          <div className="space-y-2">
+                            <label className="block text-[10px] font-bold text-slate-400 uppercase">MCQ Options</label>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                              {editIndOptions.map((opt, oIdx) => (
+                                <div key={oIdx} className="flex items-center gap-2 bg-slate-955 border border-slate-800 p-2 rounded-xl">
+                                  <span className="w-5 h-5 rounded-full bg-slate-900 border border-slate-800 text-[9px] font-bold text-slate-400 flex items-center justify-center select-none">
+                                    {String.fromCharCode(65 + oIdx)}
+                                  </span>
+                                  <input
+                                    type="text"
+                                    value={opt}
+                                    onChange={(e) => {
+                                      const copy = [...editIndOptions];
+                                      copy[oIdx] = e.target.value;
+                                      setEditIndOptions(copy);
+                                    }}
+                                    className="bg-transparent flex-1 focus:outline-none text-xs text-white"
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1.5">Detailed Explanation & Rationale</label>
+                            <RichTextEditor value={editIndExplanation} onChange={setEditIndExplanation} />
+                          </div>
+
+                          <div className="flex justify-end gap-3 pt-2">
                             <button
                               type="button"
                               onClick={() => setActiveEditIndependentId(null)}
-                              className="text-slate-400 hover:text-white"
+                              className="bg-slate-800 hover:bg-slate-755 text-slate-300 font-bold text-xs px-4 py-2 rounded-xl transition-all"
                             >
-                              <X className="w-4 h-4" />
+                              Cancel
+                            </button>
+                            <button
+                              type="button"
+                              onClick={handleSaveEditIndependentQuestion}
+                              className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs px-6 py-2 rounded-xl transition-all shadow-md shadow-emerald-500/10 flex items-center gap-1.5"
+                            >
+                              <Save className="w-4 h-4" />
+                              <span>Save Question Changes</span>
                             </button>
                           </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="p-5 sm:p-6 space-y-4">
+                        {/* Metadata Badge */}
+                        <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
+                          <div className="flex items-center gap-2.5">
+                            <span className="bg-violet-500/10 border border-violet-500/20 text-violet-400 text-[10px] font-mono font-bold px-2.5 py-1 rounded-lg">
+                              QID: {q.id}
+                            </span>
+                            <span className="bg-slate-800 text-slate-400 text-[10px] font-bold px-2 py-1 rounded-lg">
+                              🏷️ {q.topic || "General"}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleStartEditIndependentQuestion(q)}
+                              className="p-2 bg-slate-800 hover:bg-slate-750 text-slate-300 hover:text-white rounded-lg transition-colors flex items-center gap-1 text-[10px] font-bold cursor-pointer"
+                              title="Edit Question"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                              <span>Edit</span>
+                            </button>
+                            <button
+                              onClick={() => handleDeleteIndependentQuestion(q.id)}
+                              className="p-2 bg-red-500/10 hover:bg-red-650 hover:text-white text-red-400 rounded-lg transition-colors flex items-center gap-1 text-[10px] font-bold cursor-pointer"
+                              title="Delete Question"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              <span>Delete</span>
+                            </button>
+                          </div>
+                        </div>
 
-                          <div className="space-y-4">
-                            <div>
-                              <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1.5">Question Text</label>
-                              <RichTextEditor value={editIndQuestionText} onChange={setEditIndQuestionText} />
-                            </div>
+                        {/* Question STEM */}
+                        <div className="space-y-3">
+                          <div 
+                            className="text-white text-sm leading-relaxed prose prose-invert font-sans"
+                            dangerouslySetInnerHTML={{ __html: q.questionText }}
+                          />
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              {isUgSubject ? (
-                                <div>
-                                  <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1.5 font-mono">Topic Tag</label>
-                                  <select
-                                    value={editIndTopic}
-                                    onChange={(e) => setEditIndTopic(e.target.value)}
-                                    className="w-full bg-slate-955 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-violet-500 font-bold"
-                                  >
-                                    {ugTopics.map(t => (
-                                      <option key={t} value={t}>{t}</option>
-                                    ))}
-                                  </select>
-                                </div>
-                              ) : null}
-                              <div>
-                                <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1.5">Correct Option Index</label>
-                                <select
-                                  value={editIndCorrectIdx}
-                                  onChange={(e) => setEditIndCorrectIdx(parseInt(e.target.value))}
-                                  className="w-full bg-slate-955 border border-slate-800 rounded-xl p-2 text-xs text-white focus:outline-none font-bold"
+                          {/* MCQ Choices Grid */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                            {q.options.map((opt, oIdx) => {
+                              const isCorrect = q.correctOptionIndex === oIdx;
+                              return (
+                                <div
+                                  key={oIdx}
+                                  className={`p-3.5 rounded-xl border flex items-center gap-3 transition-colors ${
+                                    isCorrect
+                                      ? "bg-emerald-500/5 border-emerald-500/30 text-emerald-300"
+                                      : "bg-slate-955 border-slate-850 text-slate-400"
+                                  }`}
                                 >
-                                  <option value={0}>Option A is Correct</option>
-                                  <option value={1}>Option B is Correct</option>
-                                  <option value={2}>Option C is Correct</option>
-                                  <option value={3}>Option D is Correct</option>
-                                </select>
-                              </div>
-                            </div>
-
-                            <div className="space-y-2">
-                              <label className="block text-[10px] font-bold text-slate-400 uppercase">MCQ Options</label>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                                {editIndOptions.map((opt, oIdx) => (
-                                  <div key={oIdx} className="flex items-center gap-2 bg-slate-955 border border-slate-800 p-2 rounded-xl">
-                                    <span className="w-5 h-5 rounded-full bg-slate-900 border border-slate-800 text-[9px] font-bold text-slate-400 flex items-center justify-center select-none">
-                                      {String.fromCharCode(65 + oIdx)}
-                                    </span>
-                                    <input
-                                      type="text"
-                                      value={opt}
-                                      onChange={(e) => {
-                                        const copy = [...editIndOptions];
-                                        copy[oIdx] = e.target.value;
-                                        setEditIndOptions(copy);
-                                      }}
-                                      className="bg-transparent flex-1 focus:outline-none text-xs text-white"
-                                    />
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-
-                            <div>
-                              <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1.5">Detailed Explanation & Rationale</label>
-                              <RichTextEditor value={editIndExplanation} onChange={setEditIndExplanation} />
-                            </div>
-
-                            <div className="flex justify-end gap-3 pt-2">
-                              <button
-                                type="button"
-                                onClick={() => setActiveEditIndependentId(null)}
-                                className="bg-slate-800 hover:bg-slate-755 text-slate-300 font-bold text-xs px-4 py-2 rounded-xl transition-all"
-                              >
-                                Cancel
-                              </button>
-                              <button
-                                type="button"
-                                onClick={handleSaveEditIndependentQuestion}
-                                className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs px-6 py-2 rounded-xl transition-all shadow-md shadow-emerald-500/10 flex items-center gap-1.5"
-                              >
-                                <Save className="w-4 h-4" />
-                                <span>Save Question Changes</span>
-                              </button>
-                            </div>
+                                  <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 ${
+                                    isCorrect
+                                      ? "bg-emerald-500 text-slate-950"
+                                      : "bg-slate-900 border border-slate-800 text-slate-500"
+                                  }`}>
+                                    {String.fromCharCode(65 + oIdx)}
+                                  </span>
+                                  <span className="text-xs leading-normal font-medium">{opt}</span>
+                                </div>
+                              );
+                            })}
                           </div>
                         </div>
-                      ) : (
-                        <div className="p-5 sm:p-6 space-y-4">
-                          {/* Metadata Badge */}
-                          <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
-                            <div className="flex items-center gap-2.5">
-                              <span className="bg-violet-500/10 border border-violet-500/20 text-violet-400 text-[10px] font-mono font-bold px-2.5 py-1 rounded-lg">
-                                QID: {q.id}
-                              </span>
-                              <span className="bg-slate-800 text-slate-400 text-[10px] font-bold px-2 py-1 rounded-lg">
-                                🏷️ {q.topic || "General"}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <button
-                                onClick={() => handleStartEditIndependentQuestion(q)}
-                                className="p-2 bg-slate-800 hover:bg-slate-750 text-slate-300 hover:text-white rounded-lg transition-colors flex items-center gap-1 text-[10px] font-bold cursor-pointer"
-                                title="Edit Question"
-                              >
-                                <Edit3 className="w-3.5 h-3.5" />
-                                <span>Edit</span>
-                              </button>
-                              <button
-                                onClick={() => handleDeleteIndependentQuestion(q.id)}
-                                className="p-2 bg-red-500/10 hover:bg-red-650 hover:text-white text-red-400 rounded-lg transition-colors flex items-center gap-1 text-[10px] font-bold cursor-pointer"
-                                title="Delete Question"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                                <span>Delete</span>
-                              </button>
-                            </div>
-                          </div>
 
-                          {/* Question STEM */}
-                          <div className="space-y-3">
+                        {/* Explanation */}
+                        {q.explanation && (
+                          <div className="bg-slate-955 border border-slate-850 rounded-2xl p-4.5 mt-3 space-y-2">
+                            <h5 className="text-[10px] font-black tracking-wider text-slate-500 uppercase flex items-center gap-1.5">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                              <span>Official Explanation & Study Rationales</span>
+                            </h5>
                             <div 
-                              className="text-white text-sm leading-relaxed prose prose-invert font-sans"
-                              dangerouslySetInnerHTML={{ __html: q.questionText }}
+                              className="text-xs text-slate-300 leading-relaxed font-sans"
+                              dangerouslySetInnerHTML={{ __html: q.explanation }}
                             />
-
-                            {/* MCQ Choices Grid */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                              {q.options.map((opt, oIdx) => {
-                                const isCorrect = q.correctOptionIndex === oIdx;
-                                return (
-                                  <div
-                                    key={oIdx}
-                                    className={`p-3.5 rounded-xl border flex items-center gap-3 transition-colors ${
-                                      isCorrect
-                                        ? "bg-emerald-500/5 border-emerald-500/30 text-emerald-300"
-                                        : "bg-slate-950 border-slate-850 text-slate-400"
-                                    }`}
-                                  >
-                                    <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 ${
-                                      isCorrect
-                                        ? "bg-emerald-500 text-slate-950"
-                                        : "bg-slate-900 border border-slate-800 text-slate-500"
-                                    }`}>
-                                      {String.fromCharCode(65 + oIdx)}
-                                    </span>
-                                    <span className="text-xs leading-normal font-medium">{opt}</span>
-                                  </div>
-                                );
-                              })}
-                            </div>
                           </div>
-
-                          {/* Explanation */}
-                          {q.explanation && (
-                            <div className="bg-slate-955 border border-slate-850 rounded-2xl p-4.5 mt-3 space-y-2">
-                              <h5 className="text-[10px] font-black tracking-wider text-slate-500 uppercase flex items-center gap-1.5">
-                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                                <span>Official Explanation & Study Rationales</span>
-                              </h5>
-                              <div 
-                                className="text-xs text-slate-300 leading-relaxed font-sans"
-                                dangerouslySetInnerHTML={{ __html: q.explanation }}
-                              />
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })
             )}
           </div>
-        </div>
-      )}
-    </div>
-  );
-};
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex justify-center items-center gap-2 pt-4 select-none">
+              <button
+                type="button"
+                disabled={currentPage === 1 || isLoading}
+                onClick={() => fetchQuestions(currentPage - 1, selectedTopicId)}
+                className="px-4 py-2 bg-slate-900 border border-slate-800 hover:border-violet-500/50 hover:bg-slate-850 disabled:opacity-50 disabled:hover:border-slate-800 disabled:hover:bg-slate-900 text-xs text-white rounded-xl font-bold cursor-pointer transition-colors"
+              >
+                Previous
+              </button>
+              
+              <span className="text-xs font-bold text-slate-400 px-3 py-2 bg-slate-955 border border-slate-850 rounded-xl">
+                Page {currentPage} of {totalPages}
+              </span>
+
+              <button
+                type="button"
+                disabled={currentPage === totalPages || isLoading}
+                onClick={() => fetchQuestions(currentPage + 1, selectedTopicId)}
+                className="px-4 py-2 bg-slate-900 border border-slate-800 hover:border-violet-500/50 hover:bg-slate-850 disabled:opacity-50 disabled:hover:border-slate-800 disabled:hover:bg-slate-900 text-xs text-white rounded-xl font-bold cursor-pointer transition-colors"
+              >
+                Next
+              </button>
+            </div>
+          )}
+          </div>
+        )}
+      </div>
+    );
+  };

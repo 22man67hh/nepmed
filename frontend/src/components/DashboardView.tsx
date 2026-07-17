@@ -27,6 +27,7 @@ interface DashboardViewProps {
   onSelectSet: (setId: string) => void;
   cmsContent: CMSContent;
   onSelectSubjectPractice?: () => void;
+  dbExams?: any[];
 }
 
 export default function DashboardView({
@@ -36,7 +37,8 @@ export default function DashboardView({
   onSelectExamPage,
   onSelectSet,
   cmsContent,
-  onSelectSubjectPractice
+  onSelectSubjectPractice,
+  dbExams = []
 }: DashboardViewProps) {
   const [selectedProvince, setSelectedProvince] = useState<string>("central");
 
@@ -71,14 +73,19 @@ export default function DashboardView({
     ? Math.max(...examProgress.map(p => p.score))
     : 0;
 
-  // Formatting target exam labels
-  const examLabels: { [key: string]: string } = {
-    "mec-ug": "MEC-UG Undergraduate",
-    "mec-pg": "MEC-PG Postgraduate",
-    "nmcle": "NMCLE Licensing Board",
-    "ku-mcq": "Kathmandu University Entrance",
-    "loksewa": "Loksewa Medical Officer"
-  };
+  // Formatting target exam labels dynamically from DB if available
+  const examLabels: { [key: string]: string } = {};
+  if (dbExams && dbExams.length > 0) {
+    dbExams.forEach(exam => {
+      examLabels[exam.slug || exam.code] = exam.name;
+    });
+  } else {
+    examLabels["mec-ug"] = "MEC-UG Undergraduate";
+    examLabels["mec-pg"] = "MEC-PG Postgraduate";
+    examLabels["nmcle"] = "NMCLE Licensing Board";
+    examLabels["ku-mcq"] = "Kathmandu University Entrance";
+    examLabels["loksewa"] = "Loksewa Medical Officer";
+  }
 
   // Setup sample data for a beautiful premium custom SVG performance line chart
   const performanceHistory = examProgress.slice(-6).map((p, idx) => {

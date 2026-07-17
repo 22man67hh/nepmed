@@ -30,7 +30,11 @@ const proxyPrefixes = [
   "/api/me",
   "/api/callback/google",
   "/api/subjects",
-  "/api/exams"
+  "/api/exams",
+  "/api/topics",
+  "/api/admin-login",
+  "/api/question-sets",
+  "/api/questions",
 ];
 
 app.use(async (req, res, next) => {

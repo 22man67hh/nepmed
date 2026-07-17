@@ -11,7 +11,9 @@ class QuestionSet extends Model
 
     public function questions()
     {
-        return $this->hasMany(Question::class);
+        return $this->belongsToMany(Question::class, 'question_set_questions')
+                    ->withPivot('sort_order', 'source_refernce')
+                    ->withTimestamps();
     }
 
     public function scopeFilter($query, array $filters)

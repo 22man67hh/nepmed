@@ -48,6 +48,8 @@ interface PracticeViewProps {
   setUserDraftQuestions: React.Dispatch<React.SetStateAction<Question[]>>;
   onSaveSets?: (sets: QuestionSet[]) => void;
   cmsContent: CMSContent;
+  dbSubjects?: any[];
+  dbTopics?: any[];
 }
 
 export default function PracticeView({ 
@@ -58,76 +60,97 @@ export default function PracticeView({
   userDraftQuestions,
   setUserDraftQuestions,
   onSaveSets,
-  cmsContent
+  cmsContent,
+  dbSubjects: dbSubjectsProp = [],
+  dbTopics: dbTopicsProp = []
 }: PracticeViewProps) {
-  const [dbSubjects, setDbSubjects] = useState<any[]>([]);
+  const [dbSubjects, setDbSubjects] = useState<any[]>(dbSubjectsProp);
+  const [dbTopics, setDbTopics] = useState<any[]>(dbTopicsProp);
 
   useEffect(() => {
-    fetch("/api/subjects")
-      .then(res => res.json())
-      .then(data => {
-        if (data.status && Array.isArray(data.subjects)) {
-          setDbSubjects(data.subjects);
-        }
-      })
-      .catch(err => console.error("Failed to fetch subjects in PracticeView:", err));
-  }, []);
+    if (dbSubjectsProp && dbSubjectsProp.length > 0) {
+      setDbSubjects(dbSubjectsProp);
+    }
+  }, [dbSubjectsProp]);
 
-  // Dynamically load UG subjects from CMS content, or fallback to static defaults
+  useEffect(() => {
+    if (dbTopicsProp && dbTopicsProp.length > 0) {
+      setDbTopics(dbTopicsProp);
+    }
+  }, [dbTopicsProp]);
+
+  useEffect(() => {
+    if (dbSubjects.length === 0) {
+      fetch("/api/subjects")
+        .then(res => res.json())
+        .then(data => {
+          if (data.status && Array.isArray(data.subjects)) {
+            setDbSubjects(data.subjects);
+          }
+        })
+        .catch(err => console.error("Failed to fetch subjects in PracticeView:", err));
+    }
+    if (dbTopics.length === 0) {
+      fetch("/api/topics")
+        .then(res => res.json())
+        .then(data => {
+          if (data.status && Array.isArray(data.topics)) {
+            setDbTopics(data.topics);
+          }
+        })
+        .catch(err => console.error("Failed to fetch topics in PracticeView:", err));
+    }
+  }, [dbSubjects, dbTopics]);
+
+  // Dynamically load UG subjects strictly from DB data
   const MEC_UG_CLASSIFICATION_DYNAMIC = useMemo(() => {
-    const matchingDbSubjects = dbSubjects.filter(sub => sub.exam_id === targetExam);
-    if (matchingDbSubjects.length > 0) {
-      return matchingDbSubjects.map(sub => ({
+    const matchingDbSubjects = dbSubjects.filter(sub => 
+      sub.exam_id === targetExam || 
+      sub.exam_slug === targetExam || 
+      String(sub.exam_id) === String(targetExam) ||
+      sub.exam?.slug === targetExam ||
+      sub.exam?.code === targetExam
+    );
+    
+    return matchingDbSubjects.map(sub => {
+      const matchedTopics = dbTopics.filter(t => t.subject_id === sub.id || t.subject_id === sub.uuid || String(t.subject_id) === String(sub.id));
+      return {
         subject: sub.name,
         icon: sub.icon || "book-open",
         weight: sub.weight || 0,
-        topics: []
-      }));
-    }
+        topics: matchedTopics.map(t => ({
+          name: t.name,
+          icon: t.icon || "tag",
+          weight: t.weight || 0
+        }))
+      };
+    });
+  }, [targetExam, dbSubjects, dbTopics]);
 
-    const raw = cmsContent.mecUgClassification || MEC_UG_CLASSIFICATION;
-    let filtered = raw.filter(sub => sub.targetExam === targetExam);
-    if (filtered.length === 0) {
-      filtered = raw.filter(sub => !sub.targetExam || sub.targetExam === "mec-ug");
-    }
-    return filtered
-      .filter(sub => sub.enabled !== false)
-      .map(sub => ({
-        ...sub,
-        topics: (sub.topics || []).filter(topic => topic.enabled !== false)
-      }));
-  }, [cmsContent, targetExam, dbSubjects]);
-
-  // Dynamically load PG subjects from CMS content, or fallback to static defaults
+  // Dynamically load PG subjects strictly from DB data
   const SUBJECTS_CLASSIFICATION_DYNAMIC = useMemo(() => {
-    const matchingDbSubjects = dbSubjects.filter(sub => sub.exam_id === targetExam);
-    if (matchingDbSubjects.length > 0) {
-      const grouped = { preclinical: [] as SubjectItem[], clinical: [] as SubjectItem[], short: [] as SubjectItem[] };
-      matchingDbSubjects.forEach(sub => {
-        const category = (sub.category || "preclinical") as "preclinical" | "clinical" | "short";
-        if (grouped[category]) {
-          grouped[category].push({ name: sub.name, icon: sub.icon || "book-open" });
-        }
-      });
-      return grouped;
-    }
-
-    if (cmsContent.mecPgClassification && cmsContent.mecPgClassification.length > 0) {
-      const grouped = { preclinical: [] as SubjectItem[], clinical: [] as SubjectItem[], short: [] as SubjectItem[] };
-      let filtered = cmsContent.mecPgClassification.filter(item => item.targetExam === targetExam);
-      if (filtered.length === 0) {
-        filtered = cmsContent.mecPgClassification.filter(item => !item.targetExam || item.targetExam === "all" || item.targetExam === "mec-pg");
+    const matchingDbSubjects = dbSubjects.filter(sub => 
+      sub.exam_id === targetExam || 
+      sub.exam_slug === targetExam || 
+      String(sub.exam_id) === String(targetExam) ||
+      sub.exam?.slug === targetExam ||
+      sub.exam?.code === targetExam
+    );
+    
+    // Auto-discover unique categories from the DB subjects instead of hardcoding preclinical/clinical/short
+    const grouped: Record<string, SubjectItem[]> = {};
+    
+    matchingDbSubjects.forEach(sub => {
+      // Default to "General" if no category is provided by DB
+      const category = sub.category ? String(sub.category).toLowerCase() : "general";
+      if (!grouped[category]) {
+        grouped[category] = [];
       }
-      filtered.forEach(item => {
-        const isEnabled = item.enabled !== false;
-        if (isEnabled && grouped[item.category]) {
-          grouped[item.category].push({ name: item.subject, icon: item.icon });
-        }
-      });
-      return grouped;
-    }
-    return SUBJECTS_CLASSIFICATION;
-  }, [cmsContent, targetExam, dbSubjects]);
+      grouped[category].push({ name: sub.name, icon: sub.icon || "book-open" });
+    });
+    
+    return grouped;
+  }, [targetExam, dbSubjects]);
 
   // Dynamically calculate UG subject weights
   const MEC_UG_SUBJECT_WEIGHTS_DYNAMIC = useMemo(() => {
@@ -186,23 +209,44 @@ export default function PracticeView({
   // Sync exam style and default selections when targetExam changes
   React.useEffect(() => {
     setExamStyle(currentExamStyle);
-    if (currentExamStyle === "mec-ug") {
-      setDraftSubject("Physics");
-    } else {
-      setDraftSubject("Anatomy");
+    
+    // Set dynamic default subjects based on loaded DB data instead of hardcoded fallbacks
+    let defaultUg = "Physics";
+    let defaultPg = "General";
+    
+    if (MEC_UG_CLASSIFICATION_DYNAMIC.length > 0) {
+      defaultUg = MEC_UG_CLASSIFICATION_DYNAMIC[0].subject;
     }
-  }, [targetExam, currentExamStyle]);
+    
+    const pgKeys = Object.keys(SUBJECTS_CLASSIFICATION_DYNAMIC);
+    if (pgKeys.length > 0 && SUBJECTS_CLASSIFICATION_DYNAMIC[pgKeys[0]].length > 0) {
+      defaultPg = SUBJECTS_CLASSIFICATION_DYNAMIC[pgKeys[0]][0].name;
+    }
+    
+    if (currentExamStyle === "mec-ug") {
+      setDraftSubject(defaultUg);
+      setUgSubjectTab(defaultUg);
+      setSelectedSubject(defaultUg);
+    } else {
+      setDraftSubject(defaultPg);
+      setSelectedSubject(null);
+      
+      const keys = Object.keys(SUBJECTS_CLASSIFICATION_DYNAMIC);
+      if (keys.length > 0 && !keys.includes(preclinicalTab)) {
+        setPreclinicalTab(keys[0]);
+      }
+    }
+    setSelectedTopic(null);
+  }, [targetExam, currentExamStyle, MEC_UG_CLASSIFICATION_DYNAMIC, SUBJECTS_CLASSIFICATION_DYNAMIC]);
 
   // standard medical tabs (for non-ug style)
-  const [preclinicalTab, setPreclinicalTab] = useState<"preclinical" | "clinical" | "short">("preclinical");
+  const [preclinicalTab, setPreclinicalTab] = useState<string>("general");
   
-  // active subject tab in MEC-UG mode: Physics, Chemistry, Botany, Zoology, MAT
+  // active subject tab in MEC-UG mode
   const [ugSubjectTab, setUgSubjectTab] = useState<string>("Physics");
   
   // Selected category/topic states
-  const [selectedSubject, setSelectedSubject] = useState<string | null>(
-    targetExam === "mec-ug" ? "Physics" : null
-  );
+  const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
 
   // Custom configuration states
@@ -219,16 +263,16 @@ export default function PracticeView({
   const [draftOptions, setDraftOptions] = useState(["", "", "", ""]);
   const [draftCorrectIdx, setDraftCorrectIdx] = useState(0);
   const [draftExplanation, setDraftExplanation] = useState("");
-  const [draftSubject, setDraftSubject] = useState(targetExam === "mec-ug" ? "Physics" : "Anatomy");
-  const [draftTopic, setDraftTopic] = useState("Mechanics");
+  const [draftSubject, setDraftSubject] = useState("");
+  const [draftTopic, setDraftTopic] = useState("General");
   const [formSuccessMessage, setFormSuccessMessage] = useState("");
 
   // Creator Hub Sub-tabs / Modes
   const [creatorMode, setCreatorMode] = useState<"interactive" | "bulk" | "custom-set">("interactive");
   const [bulkFileError, setBulkFileError] = useState("");
   const [bulkParsedQuestions, setBulkParsedQuestions] = useState<Question[]>([]);
-  const [bulkSubject, setBulkSubject] = useState(targetExam === "mec-ug" ? "Physics" : "Anatomy");
-  const [bulkTopic, setBulkTopic] = useState("Mechanics");
+  const [bulkSubject, setBulkSubject] = useState("");
+  const [bulkTopic, setBulkTopic] = useState("General");
 
   // Custom Set builder state variables
   const [customSetName, setCustomSetName] = useState("My Custom Exam Set");
@@ -241,25 +285,41 @@ export default function PracticeView({
   const [customSetManualOptions, setCustomSetManualOptions] = useState(["", "", "", ""]);
   const [customSetManualCorrect, setCustomSetManualCorrect] = useState(0);
   const [customSetManualExplanation, setCustomSetManualExplanation] = useState("");
-  const [customSetManualSubject, setCustomSetManualSubject] = useState(targetExam === "mec-ug" ? "Physics" : "Anatomy");
-  const [customSetManualTopic, setCustomSetManualTopic] = useState("Mechanics");
+  const [customSetManualSubject, setCustomSetManualSubject] = useState("");
+  const [customSetManualTopic, setCustomSetManualTopic] = useState("General");
 
   // Reset bulk and draft subjects when targetExam changes
   React.useEffect(() => {
-    const isUg = targetExam === "mec-ug";
-    setDraftSubject(isUg ? "Physics" : "Anatomy");
-    setBulkSubject(isUg ? "Physics" : "Anatomy");
-  }, [targetExam]);
+    let defaultUg = "Physics";
+    let defaultPg = "General";
+    
+    if (MEC_UG_CLASSIFICATION_DYNAMIC.length > 0) {
+      defaultUg = MEC_UG_CLASSIFICATION_DYNAMIC[0].subject;
+    }
+    
+    const pgKeys = Object.keys(SUBJECTS_CLASSIFICATION_DYNAMIC);
+    if (pgKeys.length > 0 && SUBJECTS_CLASSIFICATION_DYNAMIC[pgKeys[0]].length > 0) {
+      defaultPg = SUBJECTS_CLASSIFICATION_DYNAMIC[pgKeys[0]][0].name;
+    }
+    
+    const isUg = currentExamStyle === "mec-ug";
+    const defaultSub = isUg ? defaultUg : defaultPg;
+    
+    setDraftSubject(defaultSub);
+    setBulkSubject(defaultSub);
+    setCustomSetManualSubject(defaultSub);
+  }, [currentExamStyle, MEC_UG_CLASSIFICATION_DYNAMIC, SUBJECTS_CLASSIFICATION_DYNAMIC]);
 
   // Dynamically calculate subjects for Creator Hub based on active target exam format
   const creatorSubjects = useMemo(() => {
     if (targetExam === "mec-ug") {
       return MEC_UG_CLASSIFICATION_DYNAMIC.map(cat => cat.subject);
     } else {
-      const preclinical = SUBJECTS_CLASSIFICATION_DYNAMIC.preclinical.map(s => s.name);
-      const clinical = SUBJECTS_CLASSIFICATION_DYNAMIC.clinical.map(s => s.name);
-      const short = SUBJECTS_CLASSIFICATION_DYNAMIC.short.map(s => s.name);
-      return [...preclinical, ...clinical, ...short];
+      const allSubjects: string[] = [];
+      Object.values(SUBJECTS_CLASSIFICATION_DYNAMIC).forEach(subjectList => {
+        subjectList.forEach(s => allSubjects.push(s.name));
+      });
+      return allSubjects;
     }
   }, [targetExam, MEC_UG_CLASSIFICATION_DYNAMIC, SUBJECTS_CLASSIFICATION_DYNAMIC]);
 
@@ -421,7 +481,7 @@ export default function PracticeView({
         else if (key === "D" || key === "3") correctIdx = 3;
       }
       const expl = cols[6] || "No explanation provided.";
-      const sub = cols[7] || (targetExam === "mec-ug" ? "Physics" : "Anatomy");
+      const sub = cols[7] || "General";
       const top = cols[8] || "General";
 
       added.push({
@@ -468,7 +528,7 @@ export default function PracticeView({
           else if (key === "D" || key === "3") correctIdx = 3;
         }
         const expl = cols[6] || "No explanation provided.";
-        const sub = cols[7] || (targetExam === "mec-ug" ? "Physics" : "Anatomy");
+        const sub = cols[7] || "General";
         const top = cols[8] || "General";
 
         added.push({
@@ -573,7 +633,7 @@ export default function PracticeView({
           options: Array.isArray(q.options) ? q.options : ["", "", "", ""],
           correctOptionIndex: typeof q.correctOptionIndex === "number" ? q.correctOptionIndex : 0,
           explanation: q.explanation || "No explanation provided.",
-          subject: q.subject || "Anatomy",
+          subject: q.subject || "General",
           topic: q.topic || "General"
         }));
         
@@ -1054,22 +1114,24 @@ export default function PracticeView({
             ) : (
               /* Standard MEC-PG / clinical list */
               <div className="space-y-4">
-                {/* Preclinical/Clinical/Short tabs */}
-                <div className="flex bg-slate-900 p-1 rounded-xl border border-slate-800">
-                  {(["preclinical", "clinical", "short"] as const).map(tab => (
-                    <button
-                      key={tab}
-                      onClick={() => setPreclinicalTab(tab)}
-                      className={`flex-1 py-1.5 text-center rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
-                        preclinicalTab === tab
-                          ? "bg-violet-600 text-white shadow-md"
-                          : "text-slate-400 hover:text-slate-200"
-                      }`}
-                    >
-                      {tab}
-                    </button>
-                  ))}
-                </div>
+                {/* Dynamic Category Tabs */}
+                {Object.keys(SUBJECTS_CLASSIFICATION_DYNAMIC).length > 0 && (
+                  <div className="flex bg-slate-900 p-1 rounded-xl border border-slate-800 overflow-x-auto custom-scrollbar">
+                    {Object.keys(SUBJECTS_CLASSIFICATION_DYNAMIC).map(tab => (
+                      <button
+                        key={tab}
+                        onClick={() => setPreclinicalTab(tab)}
+                        className={`flex-1 min-w-[100px] py-1.5 px-3 text-center rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                          preclinicalTab === tab
+                            ? "bg-violet-600 text-white shadow-md"
+                            : "text-slate-400 hover:text-slate-200"
+                        }`}
+                      >
+                        {tab}
+                      </button>
+                    ))}
+                  </div>
+                )}
 
                 {/* Grid of subjects */}
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -1577,7 +1639,7 @@ export default function PracticeView({
                       type="text"
                       value={customSetName}
                       onChange={(e) => setCustomSetName(e.target.value)}
-                      placeholder="e.g., General Anatomy Speed Run"
+                      placeholder="e.g., General Speed Run"
                       className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-violet-500 font-medium"
                     />
                   </div>

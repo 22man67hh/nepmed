@@ -10,7 +10,7 @@ class SubjectController extends Controller
     {
         return response()->json([
             'status' => true,
-            'subjects' => \App\Models\Subject::all()
+            'subjects' => \App\Models\Subject::with('exam')->get()
         ]);
     }
 

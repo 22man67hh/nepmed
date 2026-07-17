@@ -8,6 +8,7 @@ Route::get('/user', function (Request $request) {
 })->middleware('auth:sanctum');
 
 Route::post('/login', [App\Http\Controllers\LoginController::class, 'login']);
+Route::post('/admin-login', [App\Http\Controllers\LoginController::class, 'adminLogin']);
 Route::post('/logout', [App\Http\Controllers\LoginController::class, 'logout'])->middleware('auth:sanctum');
 Route::post('/register', [App\Http\Controllers\LoginController::class, 'register']);
 Route::get('/me', [App\Http\Controllers\LoginController::class, 'me'])->middleware('auth:sanctum');
@@ -18,4 +19,7 @@ Route::apiResource('subjects', App\Http\Controllers\SubjectController::class);
 Route::apiResource('exams', App\Http\Controllers\ExamController::class);
 Route::post('/topics/bulk', [App\Http\Controllers\TopicController::class, 'bulkSync']);
 Route::apiResource('topics', App\Http\Controllers\TopicController::class);
+Route::apiResource('questions', App\Http\Controllers\QuestionController::class);
+Route::post('/question-sets/{questionSet}/import', [App\Http\Controllers\QuestionSetController::class, 'importQuestions']);
+Route::apiResource('question-sets', App\Http\Controllers\QuestionSetController::class);
 

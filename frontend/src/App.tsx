@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { 
   UserProfile, 
   QuestionSet, 
@@ -12,7 +13,7 @@ import {
   Question,
   CMSContent
 } from "./types";
-import { INITIAL_QUESTION_SETS } from "./mockData";
+
 import { retagAllQuestions } from "./subjectsData";
 import { 
   Menu, 
@@ -44,6 +45,7 @@ import AboutUsView from "./components/AboutUsView";
 import PracticeView from "./components/PracticeView";
 import SubscriptionView from "./components/SubscriptionView";
 import ReferEarnView from "./components/ReferEarnView";
+import AdminLoginScreen from "./components/AdminLoginScreen";
 
 const INITIAL_CMS_CONTENT: CMSContent = {
   brandName: "nepmedmcq",
@@ -327,6 +329,8 @@ class LocalErrorBoundary extends React.Component<{ children: React.ReactNode }, 
 }
 
 export default function App() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [cmsContent, setCmsContent] = useState<CMSContent>(INITIAL_CMS_CONTENT);
 
   // Fetch dynamic CMS content configuration and sets
@@ -340,38 +344,103 @@ export default function App() {
       })
       .catch(err => console.error("Failed to load CMS content:", err));
 
-    // Fetch sets from backend
-    fetch("/api/admin/sets")
-      .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data) && data.length > 0) {
-          setAllSets(data);
-        } else {
-          // Initialize server with our local sets
-          fetch("/api/admin/sets", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(allSets)
-          }).catch(err => console.error("Failed to initialize sets on server:", err));
-        }
-      })
-      .catch(err => console.error("Failed to load sets from server:", err));
+    // Fetch question sets from real DB endpoint (paginated, load all pages)
+    const loadAllSets = async (examsData?: any[]) => {
+      try {
+        let page = 1;
+        let allLoaded: QuestionSet[] = [];
+        let hasMore = true;
 
-    // Fetch independent questions from backend
-    fetch("/api/admin/independent-questions")
-      .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data) && data.length > 0) {
-          setIndependentQuestions(data);
-        } else {
-          fetch("/api/admin/independent-questions", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(independentQuestions)
-          }).catch(err => console.error("Failed to initialize independent questions on server:", err));
+        while (hasMore) {
+          const res = await fetch(`/api/question-sets?per_page=100&page=${page}`);
+          const data = await res.json();
+
+          if (!data.status || !data.sets) break;
+
+          const sets: any[] = data.sets.data || data.sets;
+          const mapped: QuestionSet[] = sets.map((s: any) => {
+            // Map exam_id → examType slug using loaded exams
+            const exams = examsData || [];
+            const linkedExam = exams.find((e: any) => e.id === s.exam_id);
+            const examSlug = linkedExam?.slug || linkedExam?.code || String(s.exam_id || "mec-ug");
+
+            return {
+              id: String(s.id),
+              title: s.title || "Untitled Set",
+              examType: examSlug,
+              type: s.type || "mock-test",
+              yearOrDate: s.year_or_date || s.yearOrDate || "",
+              isFree: !!s.is_free,
+              price: parseFloat(s.price) || 0,
+              durationMinutes: parseInt(s.duration_minutes) || 60,
+              province: s.province || "all",
+              correctMarks: parseFloat(s.correct_marks) || 1,
+              incorrectMarks: parseFloat(s.incorrect_marks) || 0,
+              questions: [] // Questions loaded lazily when set is opened for editing
+            };
+          });
+
+          allLoaded = [...allLoaded, ...mapped];
+
+          const currentPage = data.sets.current_page || page;
+          const lastPage = data.sets.last_page || 1;
+          hasMore = currentPage < lastPage;
+          page++;
         }
-      })
-      .catch(err => console.error("Failed to load independent questions from server:", err));
+
+        if (allLoaded.length > 0) {
+          setAllSets(allLoaded);
+        }
+      } catch (err) {
+        console.error("Failed to load question sets from DB:", err);
+      }
+    };
+
+
+    // Fetch independent questions from backend (Global Pool)
+    const loadAllQuestions = async () => {
+      try {
+        let page = 1;
+        let allLoaded: Question[] = [];
+        let hasMore = true;
+
+        while (hasMore) {
+          const res = await fetch(`/api/questions?per_page=100&page=${page}`);
+          const data = await res.json();
+
+          if (!data.status || !data.questions) break;
+
+          const qs: any[] = data.questions.data || data.questions;
+          const mapped: Question[] = qs.map((q: any) => {
+            const opts = (q.options || []).sort((a: any, b: any) => a.option_index - b.option_index);
+            const correctIdx = opts.findIndex((o: any) => o.is_correct || o.is_correct === 1 || o.is_correct === true);
+            return {
+              id: String(q.id),
+              questionText: q.question_text || q.questionText || "",
+              options: opts.map((o: any) => o.option_text || ""),
+              correctOptionIndex: correctIdx >= 0 ? correctIdx : 0,
+              explanation: q.explanation || "",
+              subject: q.subject?.name || q.subject || "",
+              topic: q.topic?.name || q.topic || ""
+            };
+          });
+
+          allLoaded = [...allLoaded, ...mapped];
+
+          const currentPage = data.questions.current_page || page;
+          const lastPage = data.questions.last_page || 1;
+          hasMore = currentPage < lastPage;
+          page++;
+        }
+
+        if (allLoaded.length > 0) {
+          setIndependentQuestions(allLoaded);
+        }
+      } catch (err) {
+        console.error("Failed to load independent questions from DB:", err);
+      }
+    };
+    loadAllQuestions();
 
     // Fetch user draft questions from backend
     fetch("/api/admin/draft-questions")
@@ -388,6 +457,44 @@ export default function App() {
         }
       })
       .catch(err => console.error("Failed to load draft questions from server:", err));
+
+    // Fetch dynamic database categories — exams first, then use for mapping sets
+    fetch("/api/exams")
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.status && Array.isArray(data.exams)) {
+          setDbExams(data.exams);
+          // Expose to window for SubjectFoldersPoolTab exam filtering
+          (window as any).__dbExams = data.exams;
+          // Now load sets using exam data for proper slug mapping
+          loadAllSets(data.exams);
+        } else {
+          loadAllSets([]);
+        }
+      })
+      .catch(err => {
+        console.error("Failed to load exams:", err);
+        loadAllSets([]);
+      });
+
+
+    fetch("/api/subjects")
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.status && Array.isArray(data.subjects)) {
+          setDbSubjects(data.subjects);
+        }
+      })
+      .catch(err => console.error("Failed to load subjects:", err));
+
+    fetch("/api/topics")
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.status && Array.isArray(data.topics)) {
+          setDbTopics(data.topics);
+        }
+      })
+      .catch(err => console.error("Failed to load topics:", err));
   }, []);
 
   const handleSaveCMSContent = async (newContent: CMSContent) => {
@@ -596,6 +703,8 @@ export default function App() {
     }
   }, [theme]);
 
+
+
   useEffect(() => {
     localStorage.setItem("nepmed_app_settings", JSON.stringify(appSettings));
   }, [appSettings]);
@@ -618,53 +727,8 @@ export default function App() {
   const [examPageState, setExamPageState] = useState<"summary" | "browse">("summary");
 
   const [allSets, setAllSets] = useState<QuestionSet[]>(() => {
-    const saved = localStorage.getItem("nepmed_question_sets");
-    let loadedSets: QuestionSet[] = [];
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          loadedSets = parsed.map((s: any) => ({
-            ...s,
-            correctMarks: s.correctMarks !== undefined ? s.correctMarks : (s.examType === "loksewa" ? 2 : 1),
-            incorrectMarks: s.incorrectMarks !== undefined ? s.incorrectMarks : (s.examType === "loksewa" ? 0.4 : (s.examType === "mec-ug" || s.examType === "mec-pg") ? 0.25 : 0)
-          }));
-        }
-      } catch (e) {
-        console.error("Error parsing question sets:", e);
-      }
-    }
-    if (loadedSets.length === 0) {
-      loadedSets = INITIAL_QUESTION_SETS.map((s: any) => ({
-        ...s,
-        correctMarks: s.correctMarks !== undefined ? s.correctMarks : (s.examType === "loksewa" ? 2 : 1),
-        incorrectMarks: s.incorrectMarks !== undefined ? s.incorrectMarks : (s.examType === "loksewa" ? 0.4 : (s.examType === "mec-ug" || s.examType === "mec-pg") ? 0.25 : 0)
-      }));
-    }
-
-    // Assign unique chronological serial IDs
-    let pgCounter = 1001;
-    let ugCounter = 2001;
-    return loadedSets.map(set => {
-      const isPG = set.examType === "mec-pg";
-      return {
-        ...set,
-        questions: set.questions.map(q => {
-          let newId = q.id;
-          if (!newId.startsWith("MECPG-") && !newId.startsWith("MECUG-")) {
-            if (isPG) {
-              newId = `MECPG-${pgCounter++}`;
-            } else {
-              newId = `MECUG-${ugCounter++}`;
-            }
-          }
-          return {
-            ...q,
-            id: newId
-          };
-        })
-      };
-    });
+    // Start with empty — data is loaded from DB via API in useEffect below
+    return [];
   });
 
   const [progressList, setProgressList] = useState<UserProgress[]>(() => {
@@ -691,62 +755,7 @@ export default function App() {
     return [];
   });
 
-  const [independentQuestions, setIndependentQuestions] = useState<Question[]>(() => {
-    const saved = localStorage.getItem("nepmed_independent_questions");
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        console.error("Error parsing independent questions:", e);
-      }
-    }
-    return [
-      {
-        id: "MECUG-2501",
-        questionText: "What is the dimensional formula for gravitational constant G?",
-        options: ["[M⁻¹ L³ T⁻²]", "[M¹ L³ T⁻²]", "[M⁻¹ L² T⁻³]", "[M⁻² L³ T⁻¹]"],
-        correctOptionIndex: 0,
-        explanation: "Since F = G * m1 * m2 / r², G = F * r² / (m1 * m2). F has dimension [M L T⁻²], r² is [L²], m1*m2 is [M²]. Thus G is [M⁻¹ L³ T⁻²].",
-        subject: "Physics",
-        topic: "Mechanics",
-        referenceYear: "2024",
-        correctPercentage: 78
-      },
-      {
-        id: "MECUG-2502",
-        questionText: "Which of the following organic structures contains a coordinate covalent bond?",
-        options: ["CH3NO2 (Nitroethane)", "CH4 (Methane)", "C2H5OH (Ethanol)", "CH3COOH (Acetic acid)"],
-        correctOptionIndex: 0,
-        explanation: "In nitro compounds like CH3NO2, the nitrogen atom forms a coordinate dative bond with one of the oxygen atoms.",
-        subject: "Chemistry",
-        topic: "Organic Chemistry",
-        referenceYear: "2024",
-        correctPercentage: 62
-      },
-      {
-        id: "MECUG-2503",
-        questionText: "The cell wall of plants is primarily composed of which macromolecule?",
-        options: ["Cellulose", "Chitin", "Peptidoglycan", "Glycogen"],
-        correctOptionIndex: 0,
-        explanation: "Plant cell walls are made of cellulose (a polysaccharide of beta-glucose). Fungal walls are made of chitin, and bacterial walls are made of peptidoglycan.",
-        subject: "Botany",
-        topic: "Cytology",
-        referenceYear: "2023",
-        correctPercentage: 92
-      },
-      {
-        id: "MECUG-2504",
-        questionText: "Which hormone is responsible for triggering ovulation in the human menstrual cycle?",
-        options: ["Luteinizing Hormone (LH)", "Follicle Stimulating Hormone (FSH)", "Estrogen", "Progesterone"],
-        correctOptionIndex: 0,
-        explanation: "A sudden surge in Luteinizing Hormone (LH surge) triggers ovulation (the release of the mature egg) on approximately day 14 of the cycle.",
-        subject: "Zoology",
-        topic: "Human Anatomy & Physiology",
-        referenceYear: "2024",
-        correctPercentage: 81
-      }
-    ];
-  });
+  const [independentQuestions, setIndependentQuestions] = useState<Question[]>([]);
 
   const [userDraftQuestions, setUserDraftQuestions] = useState<Question[]>(() => {
     const saved = localStorage.getItem("nepmed_user_draft_questions");
@@ -757,32 +766,14 @@ export default function App() {
         console.error("Error parsing user draft questions:", e);
       }
     }
-    return [
-      {
-        id: "DRAFT-001",
-        questionText: "Calculate the equivalent resistance when three resistors of 6 ohms are connected in parallel.",
-        options: ["2 ohms", "18 ohms", "3 ohms", "9 ohms"],
-        correctOptionIndex: 0,
-        explanation: "For parallel connection: 1/Req = 1/R1 + 1/R2 + 1/R3 = 1/6 + 1/6 + 1/6 = 3/6 = 1/2. Therefore Req = 2 ohms.",
-        subject: "Physics",
-        topic: "Electricity & Magnetism",
-        referenceYear: "2025"
-      },
-      {
-        id: "DRAFT-002",
-        questionText: "Which type of plant tissue is responsible for transport of water from roots to leaves?",
-        options: ["Xylem", "Phloem", "Parenchyma", "Collenchyma"],
-        correctOptionIndex: 0,
-        explanation: "Xylem is specialized for water and mineral conduction. Phloem is for food and sugar transport.",
-        subject: "Botany",
-        topic: "Plant Anatomy & Physiology",
-        referenceYear: "2025"
-      }
-    ];
+    return [];
   });
 
   const [activeTutorQuestion, setActiveTutorQuestion] = useState<Question | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [dbExams, setDbExams] = useState<any[]>([]);
+  const [dbSubjects, setDbSubjects] = useState<any[]>([]);
+  const [dbTopics, setDbTopics] = useState<any[]>([]);
 
   // 2. Synchronize State to LocalStorage
   useEffect(() => {
@@ -793,15 +784,48 @@ export default function App() {
     localStorage.setItem("nepmed_target_exam", targetExam);
   }, [targetExam]);
 
+  // 2b. Synchronize React Router Paths with Screen States
   useEffect(() => {
-    localStorage.setItem("nepmed_question_sets", JSON.stringify(allSets));
-    // Save to server
-    fetch("/api/admin/sets", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(allSets)
-    }).catch(err => console.error("Failed to save sets to server:", err));
-  }, [allSets]);
+    const path = location.pathname;
+    
+    if (path.startsWith("/admin/login")) {
+      // Handled by rendering block
+    } else if (path.startsWith("/admin")) {
+      if (activeScreen !== "custom_admin") {
+        setActiveScreen("custom_admin");
+      }
+    } else if (path === "/login") {
+      if (userProfile.isLoggedIn) {
+        navigate("/dashboard");
+      }
+    } else if (path === "/") {
+      if (userProfile.isLoggedIn) {
+        if (userProfile.role === "admin") {
+          navigate("/admin");
+        } else {
+          navigate("/dashboard");
+        }
+      } else {
+        navigate("/login");
+      }
+    } else {
+      const screen = path.replace("/", "");
+      const validScreens = [
+        "dashboard", "bookmarks", "history", "leaderboard", 
+        "forum", "about", "practice", "set_practice", "subscription", "refer_earn"
+      ];
+      if (validScreens.includes(screen)) {
+        if (activeScreen !== screen) {
+          setActiveScreen(screen as any);
+        }
+      } else {
+        navigate("/dashboard");
+      }
+    }
+  }, [location.pathname, userProfile.isLoggedIn]);
+
+  // Sets are now DB-driven via /api/question-sets — no localStorage or /api/admin/sets sync needed
+
 
   // Sync custom sets added from the CMS target exams into allSets dynamically
   useEffect(() => {
@@ -900,13 +924,7 @@ export default function App() {
   }, [bookmarks]);
 
   useEffect(() => {
-    localStorage.setItem("nepmed_independent_questions", JSON.stringify(independentQuestions));
-    // Save to server
-    fetch("/api/admin/independent-questions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(independentQuestions)
-    }).catch(err => console.error("Failed to save independent questions to server:", err));
+    // Independent questions are managed in DB, no need to sync entire array to server here
   }, [independentQuestions]);
 
   useEffect(() => {
@@ -951,24 +969,22 @@ export default function App() {
     if (preferredExam) {
       setTargetExam(preferredExam);
     }
-    setActiveScreen("dashboard");
+    navigate("/dashboard");
     setExamPageState("browse"); // Show specific page in dashboard at first
   };
 
   const handleLogout = async () => {
     const token = localStorage.getItem("nepmed_auth_token");
     if (token) {
-      try {
-        await fetch("/api/logout", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`
-          }
-        });
-      } catch (err) {
+      fetch("/api/logout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        }
+      }).catch((err) => {
         console.error("Failed to sign out from backend:", err);
-      }
+      });
       localStorage.removeItem("nepmed_auth_token");
     }
 
@@ -980,7 +996,7 @@ export default function App() {
       isLoggedIn: false,
       purchasedSetIds: []
     });
-    setActiveScreen("dashboard");
+    navigate("/login");
     setActiveSetId(null);
   };
 
@@ -1063,7 +1079,7 @@ export default function App() {
     if (set) {
       setTargetExam(set.examType);
       setActiveSetId(setId);
-      setActiveScreen("dashboard");
+      navigate("/dashboard");
     }
   };
 
@@ -1090,9 +1106,9 @@ export default function App() {
               setTargetExam(matchSet.examType);
             }
             setActiveSetId(setId);
-            setActiveScreen("dashboard");
+            navigate("/dashboard");
           }}
-          onNavigateToDashboard={() => setActiveScreen("dashboard")}
+          onNavigateToDashboard={() => navigate("/dashboard")}
         />
       );
     }
@@ -1103,7 +1119,7 @@ export default function App() {
           userProfile={userProfile}
           progressList={progressList}
           cmsContent={cmsContent}
-          onNavigateToDashboard={() => setActiveScreen("dashboard")}
+          onNavigateToDashboard={() => navigate("/dashboard")}
         />
       );
     }
@@ -1209,6 +1225,8 @@ export default function App() {
           setUserDraftQuestions={setUserDraftQuestions}
           onSaveSets={setAllSets}
           cmsContent={cmsContent}
+          dbSubjects={dbSubjects}
+          dbTopics={dbTopics}
           onStartCustomSession={(customSet, mode) => {
             setCustomWorkoutSet(customSet);
             setCustomWorkoutMode(mode);
@@ -1243,8 +1261,9 @@ export default function App() {
           onUnlockSet={handleUnlockSet}
           onSubscribe={handleSubscribe}
           onSelectSet={setActiveSetId}
-          onBack={() => setActiveScreen("dashboard")}
+          onBack={() => navigate("/dashboard")}
           cmsContent={cmsContent}
+          dbExams={dbExams}
         />
       );
     }
@@ -1276,7 +1295,7 @@ export default function App() {
           onUnlockSet={handleUnlockSet}
           onSubscribe={handleSubscribe}
           onSelectSet={(setId) => {
-            setActiveScreen("set_practice");
+            navigate("/set_practice");
             setActiveSetId(setId);
           }}
           onBack={() => setExamPageState("summary")}
@@ -1292,20 +1311,69 @@ export default function App() {
         progressList={progressList}
         allSets={allSets}
         onSelectExamPage={() => {
-          setActiveScreen("set_practice");
+          navigate("/set_practice");
           setExamPageState("browse");
         }}
         onSelectSet={(setId) => {
-          setActiveScreen("set_practice");
+          navigate("/set_practice");
           setActiveSetId(setId);
         }}
         onSelectSubjectPractice={() => {
-          setActiveScreen("practice");
+          navigate("/practice");
         }}
         cmsContent={cmsContent}
+        dbExams={dbExams}
       />
     );
   };
+
+  // Direct Admin Portal Gating (completely separate from student portal)
+  const isLoginPage = location.pathname === "/admin/login";
+  const isAdminPath = location.pathname.startsWith("/admin");
+
+  if (isLoginPage) {
+    const handleAdminLoginSuccess = (profile: UserProfile) => {
+      setUserProfile(profile);
+    };
+    return (
+      <AdminLoginScreen onLoginSuccess={handleAdminLoginSuccess} />
+    );
+  }
+
+  if (isAdminPath) {
+    const isAdmin = userProfile.isLoggedIn && (
+      userProfile.role === "admin" || 
+      userProfile.email?.toLowerCase().includes("admin") || 
+      userProfile.name?.toLowerCase().includes("admin")
+    );
+    if (!isAdmin) {
+      navigate("/admin/login");
+      return (
+        <div className="min-h-screen bg-slate-955 flex flex-col items-center justify-center text-xs text-slate-500 font-mono gap-2">
+          <span>Redirecting to admin login portal...</span>
+        </div>
+      );
+    }
+    return (
+      <CustomAdminPanel 
+        allSets={allSets}
+        onSaveSets={setAllSets}
+        independentQuestions={independentQuestions}
+        onSaveIndependentQuestions={setIndependentQuestions}
+        userDraftQuestions={userDraftQuestions}
+        onSaveUserDraftQuestions={setUserDraftQuestions}
+        targetExam={targetExam}
+        cmsContent={cmsContent}
+        onSaveCMSContent={handleSaveCMSContent}
+        onLogout={handleLogout}
+        dbExams={dbExams}
+        dbSubjects={dbSubjects}
+        dbTopics={dbTopics}
+        theme={theme}
+        setTheme={setTheme}
+      />
+    );
+  }
 
   // If user is not logged in, force Login screen
   if (!userProfile.isLoggedIn) {
@@ -1313,14 +1381,14 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col landscape:flex-row lg:flex-row font-sans">
+    <div className="min-h-screen bg-slate-955 flex flex-col landscape:flex-row lg:flex-row font-sans">
       
       {/* Sidebar Layout */}
       <Sidebar 
         userProfile={userProfile}
         activeScreen={activeScreen}
         setActiveScreen={(scr) => {
-          setActiveScreen(scr);
+          navigate("/" + scr);
           setActiveSetId(null);
           setExamPageState("summary");
         }}
@@ -1335,6 +1403,7 @@ export default function App() {
         setIsSidebarOpen={setIsSidebarOpen}
         onEditProfile={() => setShowSettingsModal(true)}
         cmsContent={cmsContent}
+        dbExams={dbExams}
       />
 
       {/* Main Content Pane */}
@@ -1426,7 +1495,7 @@ export default function App() {
                           onClick={() => {
                             setTargetExam(set.examType);
                             setActiveSetId(set.id);
-                            setActiveScreen("dashboard");
+                            navigate("/dashboard");
                             setExamPageState("browse");
                             setSearchQuery("");
                             setShowSearchResults(false);
@@ -1454,39 +1523,17 @@ export default function App() {
             )}
           </div>
 
-          {/* Right Section: Target Exam options + Profile Menu */}
+          {/* Right Section: Theme Toggle and Profile Menu */}
           <div className="flex items-center gap-3">
             
-            {/* Target Exam Dropdown Selector */}
-            <div className="hidden sm:flex items-center gap-1.5 bg-slate-950/60 px-3 py-1.5 rounded-xl border border-slate-800">
-              <span className="text-[10px] text-slate-500 font-extrabold uppercase tracking-widest font-mono">Exam</span>
-              <select
-                value={targetExam}
-                onChange={(e) => {
-                  setTargetExam(e.target.value);
-                  setExamPageState("browse");
-                  setActiveSetId(null);
-                  setActiveScreen("dashboard");
-                }}
-                className="bg-transparent text-white text-xs font-bold focus:outline-none cursor-pointer border-none pr-1 focus:ring-0"
-              >
-                {cmsContent?.targetExams && cmsContent.targetExams.length > 0 ? (
-                  cmsContent.targetExams.map((exam: any) => (
-                    <option key={exam.id} value={exam.id} className="bg-slate-900 text-slate-200 font-sans">
-                      {exam.name || exam.code || exam.id}
-                    </option>
-                  ))
-                ) : (
-                  <>
-                    <option value="mec-ug" className="bg-slate-900 text-slate-200 font-sans">MEC-UG</option>
-                    <option value="mec-pg" className="bg-slate-900 text-slate-200 font-sans">MEC-PG</option>
-                    <option value="nmcle" className="bg-slate-900 text-slate-200 font-sans">NMCLE</option>
-                    <option value="ku-mcq" className="bg-slate-900 text-slate-200 font-sans">KU MCQ</option>
-                    <option value="loksewa" className="bg-slate-900 text-slate-200 font-sans">Loksewa</option>
-                  </>
-                )}
-              </select>
-            </div>
+            {/* Theme Toggle Button */}
+            <button
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              className="p-1.5 rounded-xl bg-slate-950/60 hover:bg-slate-800/40 border border-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer flex items-center justify-center"
+              aria-label="Toggle Theme"
+            >
+              {theme === "dark" ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5 text-indigo-400" />}
+            </button>
 
             {/* Profile Dropdown Component */}
             <div className="relative">

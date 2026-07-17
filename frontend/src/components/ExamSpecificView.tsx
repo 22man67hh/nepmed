@@ -31,6 +31,7 @@ interface ExamSpecificViewProps {
   onSelectSet: (setId: string) => void;
   onBack?: () => void;
   cmsContent?: any;
+  dbExams?: any[];
 }
 
 export default function ExamSpecificView({
@@ -41,7 +42,8 @@ export default function ExamSpecificView({
   onSubscribe,
   onSelectSet,
   onBack,
-  cmsContent
+  cmsContent,
+  dbExams = []
 }: ExamSpecificViewProps) {
   const [filterType, setFilterType] = useState<"all" | "past-year" | "mock-test" | "free">("all");
   const [selectedYear, setSelectedYear] = useState<string>("all");
@@ -94,21 +96,31 @@ export default function ExamSpecificView({
     return valB.localeCompare(valA);
   });
 
-  const examLabels: { [key: string]: string } = {
-    "mec-ug": "MEC-UG Undergraduate",
-    "mec-pg": "MEC-PG Postgraduate",
-    "nmcle": "NMCLE Licensing Board",
-    "ku-mcq": "Kathmandu University MCQ",
-    "loksewa": "Loksewa Medical Officer"
-  };
+  const examLabels: { [key: string]: string } = {};
+  if (dbExams && dbExams.length > 0) {
+    dbExams.forEach(exam => {
+      examLabels[exam.slug || exam.code] = exam.name;
+    });
+  } else {
+    examLabels["mec-ug"] = "MEC-UG Undergraduate";
+    examLabels["mec-pg"] = "MEC-PG Postgraduate";
+    examLabels["nmcle"] = "NMCLE Licensing Board";
+    examLabels["ku-mcq"] = "Kathmandu University Entrance";
+    examLabels["loksewa"] = "Loksewa Medical Officer";
+  }
 
-  const examDescriptions: { [key: string]: string } = {
-    "mec-ug": "Medical Education Commission - Undergraduate (MBBS/BDS/BSc Nursing Entrance Exam preparation modules and detailed past papers).",
-    "mec-pg": "Medical Education Commission - Postgraduate (MD/MS MDGP entrance modules with advanced clinical case explanations).",
-    "nmcle": "Nepal Medical Council Licensing Exam (booster question sets aligned with official syllabus blocks & past papers).",
-    "ku-mcq": "Kathmandu University undergraduate entrance and licensing examination past question bank.",
-    "loksewa": "Public Service Commission (Loksewa Aayog) General Medical Officer and Healthcare Services exams."
-  };
+  const examDescriptions: { [key: string]: string } = {};
+  if (dbExams && dbExams.length > 0) {
+    dbExams.forEach(exam => {
+      examDescriptions[exam.slug || exam.code] = exam.description || `Prepare for ${exam.name} with our high-yield test series.`;
+    });
+  } else {
+    examDescriptions["mec-ug"] = "Medical Education Commission - Undergraduate (MBBS/BDS/BSc Nursing Entrance Exam preparation modules and detailed past papers).";
+    examDescriptions["mec-pg"] = "Medical Education Commission - Postgraduate (MD/MS MDGP entrance modules with advanced clinical case explanations).";
+    examDescriptions["nmcle"] = "Nepal Medical Council Licensing Exam (booster question sets aligned with official syllabus blocks & past papers).";
+    examDescriptions["ku-mcq"] = "Kathmandu University undergraduate entrance and licensing examination past question bank.";
+    examDescriptions["loksewa"] = "Public Service Commission (Loksewa Aayog) General Medical Officer and Healthcare Services exams.";
+  }
 
   const currentCmsExam = cmsContent?.targetExams?.find((e: any) => e.id === targetExam);
   const headingText = currentCmsExam?.setwiseHeading || currentCmsExam?.name || examLabels[targetExam] || "Target Arena";

@@ -38,6 +38,7 @@ interface SidebarProps {
   setIsSidebarOpen: (isOpen: boolean) => void;
   onEditProfile?: () => void;
   cmsContent: CMSContent;
+  dbExams?: any[];
 }
 
 export default function Sidebar({
@@ -50,20 +51,29 @@ export default function Sidebar({
   isSidebarOpen,
   setIsSidebarOpen,
   onEditProfile,
-  cmsContent
+  cmsContent,
+  dbExams: dbExamsProp = []
 }: SidebarProps) {
-  const [dbExams, setDbExams] = React.useState<any[]>([]);
+  const [dbExams, setDbExams] = React.useState<any[]>(dbExamsProp);
 
   React.useEffect(() => {
-    fetch("/api/exams")
-      .then(res => res.json())
-      .then(data => {
-        if (data.status && Array.isArray(data.exams)) {
-          setDbExams(data.exams);
-        }
-      })
-      .catch(err => console.error("Failed to load exams in sidebar:", err));
-  }, []);
+    if (dbExamsProp && dbExamsProp.length > 0) {
+      setDbExams(dbExamsProp);
+    }
+  }, [dbExamsProp]);
+
+  React.useEffect(() => {
+    if (dbExams.length === 0) {
+      fetch("/api/exams")
+        .then(res => res.json())
+        .then(data => {
+          if (data.status && Array.isArray(data.exams)) {
+            setDbExams(data.exams);
+          }
+        })
+        .catch(err => console.error("Failed to load exams in sidebar:", err));
+    }
+  }, [dbExams]);
 
   const examOptions = React.useMemo(() => {
     if (dbExams.length > 0) {
@@ -210,35 +220,6 @@ export default function Sidebar({
             })()}
           </div>
 
-          {/* Admin Panels */}
-          {(() => {
-            const isAdmin = userProfile.role === "admin" || 
-                            userProfile.email?.toLowerCase().includes("admin") || 
-                            userProfile.name?.toLowerCase().includes("admin");
-console.log("isAdmin:", isAdmin);
-            if (!isAdmin) return null;
-
-            return (
-              <div className="mt-8 space-y-1.5 font-sans">
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-2 mb-2">Internal Admin</p>
-                
-                <button
-                  onClick={() => {
-                    setActiveScreen("custom_admin");
-                    setIsSidebarOpen(false);
-                  }}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
-                    activeScreen === "custom_admin"
-                      ? "bg-violet-500/15 text-violet-400 border border-violet-500/20"
-                      : "text-slate-400 hover:bg-slate-800/50 hover:text-white border border-transparent"
-                  }`}
-                >
-                  <Sliders className="w-4 h-4 shrink-0 animate-none" />
-                  <span>Premium Admin Room</span>
-                </button>
-              </div>
-            );
-          })()}
         </div>
 
         {/* Bottom User Area */}

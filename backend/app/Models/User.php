@@ -17,6 +17,7 @@ class User extends Authenticatable implements \Illuminate\Contracts\Auth\MustVer
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable,HasApiTokens;
+    protected $appends = ['daily_bonus_available'];
 
     /**
      * Get the attributes that should be cast.
@@ -30,4 +31,26 @@ class User extends Authenticatable implements \Illuminate\Contracts\Auth\MustVer
             'password' => 'hashed',
         ];
     }
+
+    public function user_logs(){
+        return $this->hasMany(UserLog::class);
+    }
+
+public function scopeUser($query,array $filters){
+$query->when($filters['search'] ?? null, function ($query, $search) {
+    $query->where('name','like','%'.$search.'%')
+    ->orWhere('email','like','%'.$search.'%')
+    ->orWhere('role','like','%'.$search.'%')
+    ->orWhere('point','like','%'.$search.'%');
+});
+
+return $query;
+}
+
+
+public function getDailyBonusAvailableAttribute()
+{
+    return !$this->user_logs()->whereDate('created_at', now()->toDateString())->exists();
+}
+
 }

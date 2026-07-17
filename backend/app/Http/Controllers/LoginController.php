@@ -29,13 +29,15 @@ class LoginController extends Controller
         ]);
         if (Auth::attempt($request->only('email', 'password'))) {
             $user = Auth::user();
-            if($user->role != 'user') {
+            if ($user->role != 'user') {
                 return response()->json([
                     'message' => 'You are not a user',
                     'status' => false
-                ],401);
+                ], 401);
             }
             $token = $user->createToken('auth_token')->plainTextToken;
+            $this->setUserLog($user);
+
             return response()->json([
                 'message' => 'Login successful',
                 'token' => $token,
@@ -51,6 +53,30 @@ class LoginController extends Controller
     }
 
 
+    private function setUserLog($user)
+    {
+        $user->user_logs()->create([
+            'description' => 'Login successful',
+            'user_id' => $user->id,
+            'logged_at' => now(),
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->userAgent(),
+            'device' => request()->header('User-Agent'),
+
+
+        ]);
+    }
+
+    public function isDailyBonusAvailable(Request $request){
+        $user = $request->user();
+        $isAvailable = $user->daily_bonus_available;
+
+        return response()->json([
+            'isAvailable' => $isAvailable,
+            'todayP'
+        ]);
+    }
+
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()->delete();
@@ -61,35 +87,36 @@ class LoginController extends Controller
     }
 
 
-public function adminLogin(Request $request){
+    public function adminLogin(Request $request)
+    {
 
-    $request->validate([
-        'email' => 'required|email',
-        'password' => 'required|string',
-    ]);
-
-    if (Auth::attempt($request->only('email', 'password'))) {
-        $user = Auth::user();
-        if($user->role != 'admin') {
-            return response()->json([
-                'message' => 'You are not an admin',
-                'status' => false
-            ],401);
-        }
-        $token = $user->createToken('auth_token')->plainTextToken;
-        return response()->json([
-            'message' => 'Login successful',
-            'token' => $token,
-            'user' => $user,
-            'status' => true
-
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required|string',
         ]);
+
+        if (Auth::attempt($request->only('email', 'password'))) {
+            $user = Auth::user();
+            if ($user->role != 'admin') {
+                return response()->json([
+                    'message' => 'You are not an admin',
+                    'status' => false
+                ], 401);
+            }
+            $token = $user->createToken('auth_token')->plainTextToken;
+            return response()->json([
+                'message' => 'Login successful',
+                'token' => $token,
+                'user' => $user,
+                'status' => true
+
+            ]);
+        }
+        return response()->json([
+            'message' => 'Invalid credentials',
+            'status' => false
+        ], 401);
     }
-    return response()->json([
-        'message' => 'Invalid credentials',
-        'status' => false
-    ], 401);
-}
 
     public function me(Request $request)
     {
@@ -251,7 +278,7 @@ public function adminLogin(Request $request){
 
         try {
             $googleUser = Socialite::driver('google')->stateless()->userFromToken($request->token);
-            $user=User::updateOrCreate([
+            $user = User::updateOrCreate([
                 'email' => $googleUser->getEmail(),
             ], [
                 'name' => $googleUser->getName(),
@@ -276,5 +303,4 @@ public function adminLogin(Request $request){
             ], 500);
         }
     }
-
 }

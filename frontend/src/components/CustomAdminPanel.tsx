@@ -4,15 +4,16 @@
  */
 
 import React, { useState, useEffect } from "react";
-import { 
-  Plus, 
-  Trash2, 
-  Edit, 
-  Save, 
-  Clock, 
-  Tag, 
-  HelpCircle, 
-  CheckCircle, 
+import { useLocation, useNavigate } from "react-router-dom";
+import {
+  Plus,
+  Trash2,
+  Edit,
+  Save,
+  Clock,
+  Tag,
+  HelpCircle,
+  CheckCircle,
   UploadCloud,
   ArrowRight,
   Sparkles,
@@ -39,10 +40,13 @@ import {
   BookOpen,
   Settings,
   Menu,
-  Sliders
+  Sliders,
+  LogOut,
+  Sun,
+  Moon
 } from "lucide-react";
 import { QuestionSet, Question } from "../types";
-import { ALL_STANDARD_SUBJECTS, MEC_UG_CLASSIFICATION, generateQuestionIdForSubject, retagAllQuestions } from "../subjectsData";
+import { generateQuestionIdForSubject, retagAllQuestions } from "../subjectsData";
 import RichTextEditor from "./RichTextEditor";
 import { CmsControlPanel } from "./CmsControlPanel";
 
@@ -67,6 +71,12 @@ interface CustomAdminPanelProps {
   targetExam?: string;
   cmsContent?: any;
   onSaveCMSContent?: (newContent: any) => Promise<boolean>;
+  onLogout?: () => void;
+  dbExams?: any[];
+  dbSubjects?: any[];
+  dbTopics?: any[];
+  theme?: "dark" | "light";
+  setTheme?: (theme: "dark" | "light") => void;
 }
 
 // Global Helper to parse CSV
@@ -112,14 +122,14 @@ const extractQuestionsFromCSV = (text: string): Question[] => {
   const rows = parseCSV(text);
   return rows.map((row, index) => {
     const isTenColumn = row.length >= 9;
-    
+
     const id = isTenColumn ? (row[0] || "").trim() : `parsed-q-${Date.now()}-${index}`;
     const questionText = isTenColumn ? (row[1] || "") : (row[0] || `MCQ Question ${index + 1}`);
     const optA = isTenColumn ? (row[2] || "") : (row[1] || "");
     const optB = isTenColumn ? (row[3] || "") : (row[2] || "");
     const optC = isTenColumn ? (row[4] || "") : (row[3] || "");
     const optD = isTenColumn ? (row[5] || "") : (row[4] || "");
-    
+
     const correctStr = (isTenColumn ? (row[6] || "0") : (row[5] || "0")).trim().toLowerCase();
     let correctOptionIndex = 0;
     if (correctStr === "a" || correctStr === "0" || correctStr.includes("option a") || correctStr.includes("option 1")) {
@@ -191,11 +201,11 @@ function parseCSVToQuestions(csvText: string, defaultSubject: string, defaultTop
   let currentRow: string[] = [];
   let currentField = "";
   let insideQuotes = false;
-  
+
   for (let i = 0; i < csvText.length; i++) {
     const char = csvText[i];
     const nextChar = csvText[i + 1];
-    
+
     if (char === '"') {
       if (insideQuotes && nextChar === '"') {
         currentField += '"';
@@ -238,16 +248,16 @@ function parseCSVToQuestions(csvText: string, defaultSubject: string, defaultTop
   for (let i = startIndex; i < rows.length; i++) {
     const row = rows[i];
     if (row.length < 2) continue;
-    
+
     let id = row[0] ? row[0].trim() : "";
     const questionText = row[1] || "";
     if (!questionText.trim()) continue;
-    
+
     const optA = row[2] || "";
     const optB = row[3] || "";
     const optC = row[4] || "";
     const optD = row[5] || "";
-    
+
     const correctStr = (row[6] || "0").trim().toLowerCase();
     let correctOptionIndex = 0;
     if (correctStr === "a" || correctStr === "0" || correctStr.includes("option a") || correctStr.includes("option 1")) {
@@ -264,7 +274,7 @@ function parseCSVToQuestions(csvText: string, defaultSubject: string, defaultTop
         correctOptionIndex = num;
       }
     }
-    
+
     const explanation = row[7] || "No explanation provided.";
     const subject = row[8] ? row[8].trim() : defaultSubject;
     const topic = row[9] ? row[9].trim() : defaultTopic;
@@ -295,36 +305,111 @@ function parseCSVToQuestions(csvText: string, defaultSubject: string, defaultTop
   return parsedQuestions;
 }
 
-export default function CustomAdminPanel({ 
-  allSets, 
+export default function CustomAdminPanel({
+  allSets,
   onSaveSets,
   independentQuestions = [],
-  onSaveIndependentQuestions = () => {},
+  onSaveIndependentQuestions = () => { },
   userDraftQuestions = [],
-  onSaveUserDraftQuestions = () => {},
+  onSaveUserDraftQuestions = () => { },
   targetExam = "mec-ug",
   cmsContent,
-  onSaveCMSContent
+  onSaveCMSContent,
+  onLogout,
+  dbExams: dbExamsProp = [],
+  dbSubjects: dbSubjectsProp = [],
+  dbTopics: dbTopicsProp = [],
+  theme = "dark",
+  setTheme
 }: CustomAdminPanelProps) {
   // Detailed set editor screen
   const [activeEditSet, setActiveEditSet] = useState<QuestionSet | null>(null);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Synchronize activeEditSet Set Builder with browser URL
+  useEffect(() => {
+    const editMatch = location.pathname.match(/\/admin\/mcq-editor\/edit\/(.+)/);
+    if (editMatch) {
+      const setId = editMatch[1];
+      const foundSet = allSets.find(s => s.id === setId);
+      if (foundSet) {
+        if (!activeEditSet || activeEditSet.id !== setId) {
+          setActiveEditSet(JSON.parse(JSON.stringify(foundSet)));
+        }
+      } else {
+        navigate("/admin/mcq-editor");
+      }
+    } else if (location.pathname === "/admin/mcq-editor/create") {
+      if (!activeEditSet || !activeEditSet.id.startsWith("set-new")) {
+        setActiveEditSet({
+          id: `set-new-${Date.now()}`,
+          title: "",
+          examType: "mec-ug",
+          type: "mock-test",
+          questions: [],
+          timeLimitMinutes: 180,
+          price: 0,
+          isFree: true,
+          correctMarks: 1,
+          incorrectMarks: 0.25
+        });
+      }
+    } else {
+      if (activeEditSet) {
+        setActiveEditSet(null);
+      }
+    }
+  }, [location.pathname, allSets]);
 
   // App message / Notification state
   const [message, setMessage] = useState("");
 
-  // Navigation Panel State
-  const [adminTab, setAdminTab] = useState<"dashboard" | "papers" | "reports" | "questions" | "review" | "cms" | "exams" | "subjects" | "topics">("dashboard");
+
+  // Navigation Panel State linked to URL routes
+  const getActiveTabFromPath = (): "dashboard" | "papers" | "reports" | "questions" | "review" | "cms" | "exams" | "subjects" | "topics" => {
+    const path = location.pathname;
+    if (path.startsWith("/admin/mcq-editor") || path === "/admin/papers") return "papers";
+    if (path === "/admin/subjects") return "subjects";
+    if (path === "/admin/topics") return "topics";
+    if (path === "/admin/exams") return "exams";
+    if (path === "/admin/questions") return "questions";
+    if (path === "/admin/review") return "review";
+    if (path === "/admin/reports") return "reports";
+    if (path === "/admin/cms") return "cms";
+    return "dashboard";
+  };
+
+  const adminTab = getActiveTabFromPath();
+
+  const setAdminTab = (tab: "dashboard" | "papers" | "reports" | "questions" | "review" | "cms" | "exams" | "subjects" | "topics") => {
+    const targetPath = tab === "papers" ? "/admin/mcq-editor" : `/admin/${tab}`;
+    navigate(targetPath);
+  };
 
   // Mobile responsiveness drawer
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Live Database Synchronized States
-  const [dbExams, setDbExams] = useState<any[]>([]);
-  const [dbSubjects, setDbSubjects] = useState<any[]>([]);
-  const [dbTopics, setDbTopics] = useState<any[]>([]);
+  const [dbExams, setDbExams] = useState<any[]>(dbExamsProp);
+  const [dbSubjects, setDbSubjects] = useState<any[]>(dbSubjectsProp);
+  const [dbTopics, setDbTopics] = useState<any[]>(dbTopicsProp);
   const [examsLoading, setExamsLoading] = useState(false);
   const [subjectsLoading, setSubjectsLoading] = useState(false);
   const [topicsLoading, setTopicsLoading] = useState(false);
+
+  useEffect(() => {
+    if (dbExamsProp.length > 0) setDbExams(dbExamsProp);
+  }, [dbExamsProp]);
+
+  useEffect(() => {
+    if (dbSubjectsProp.length > 0) setDbSubjects(dbSubjectsProp);
+  }, [dbSubjectsProp]);
+
+  useEffect(() => {
+    if (dbTopicsProp.length > 0) setDbTopics(dbTopicsProp);
+  }, [dbTopicsProp]);
 
   // CMS state bindings
   const [cmsBrandName, setCmsBrandName] = useState("");
@@ -550,7 +635,7 @@ export default function CustomAdminPanel({
 
   const handleSaveCMS = async () => {
     if (!onSaveCMSContent) return;
-    
+
     // Auto-update mapping labels in sidebarLabels
     const updatedLabels = {
       ...cmsSidebarLabels,
@@ -616,37 +701,38 @@ export default function CustomAdminPanel({
   };
 
   const getModalSubjects = () => {
-    const examType = getModalExamType();
-    if (examType === "mec-ug") {
-      return ["Physics", "Chemistry", "Botany", "Zoology", "MAT"];
-    } else {
-      return ALL_STANDARD_SUBJECTS;
-    }
+    // Use DB subjects; no static fallback
+    return dbSubjects.map(s => s.name);
   };
 
-  const getTopicsForSubject = (subjectName: string, examType: "mec-ug" | "mec-pg") => {
-    if (examType === "mec-ug") {
-      const category = MEC_UG_CLASSIFICATION.find(c => c.subject.toLowerCase() === subjectName.toLowerCase());
-      return category ? category.topics.map(t => t.name) : [];
-    } else {
-      const topicsSet = new Set<string>();
-      topicsSet.add("General");
-      if (independentQuestions) {
-        independentQuestions.forEach(q => {
-          if (q.subject?.toLowerCase() === subjectName.toLowerCase() && q.topic) {
-            topicsSet.add(q.topic);
-          }
-        });
-      }
-      allSets.forEach(s => {
-        s.questions.forEach(q => {
-          if (q.subject?.toLowerCase() === subjectName.toLowerCase() && q.topic) {
-            topicsSet.add(q.topic);
-          }
-        });
-      });
-      return Array.from(topicsSet);
+  const getTopicsForSubject = (subjectName: string) => {
+    // Find the subject in DB
+    const subjectObj = dbSubjects.find(s => s.name?.toLowerCase() === subjectName?.toLowerCase());
+    if (subjectObj) {
+      // Filter DB topics by this subject's id or uuid
+      const subTopics = dbTopics.filter(
+        (t) => t.subject_id === subjectObj.uuid || t.subject_id === subjectObj.id
+      );
+      if (subTopics.length > 0) return subTopics.map((t: any) => t.name);
     }
+    // Fallback: gather unique topics from existing questions
+    const topicsSet = new Set<string>();
+    topicsSet.add("General");
+    if (independentQuestions) {
+      independentQuestions.forEach(q => {
+        if (q.subject?.toLowerCase() === subjectName.toLowerCase() && q.topic) {
+          topicsSet.add(q.topic);
+        }
+      });
+    }
+    allSets.forEach(s => {
+      s.questions.forEach(q => {
+        if (q.subject?.toLowerCase() === subjectName.toLowerCase() && q.topic) {
+          topicsSet.add(q.topic);
+        }
+      });
+    });
+    return Array.from(topicsSet);
   };
 
   const parseCSVToGrid = (text: string): string[][] => {
@@ -655,7 +741,7 @@ export default function CustomAdminPanel({
     const tabCount = (firstLine.match(/\t/g) || []).length;
     const semicolonCount = (firstLine.match(/;/g) || []).length;
     const commaCount = (firstLine.match(/,/g) || []).length;
-    
+
     if (tabCount > commaCount && tabCount > semicolonCount) {
       delimiter = '\t';
     } else if (semicolonCount > commaCount && semicolonCount > tabCount) {
@@ -729,9 +815,9 @@ export default function CustomAdminPanel({
       const rawSubject = (paddedRow[8] || "").trim();
       if (rawSubject) {
         const lowerSub = rawSubject.toLowerCase();
-        const matchedSub = ALL_STANDARD_SUBJECTS.find(s => s.toLowerCase() === lowerSub);
+        const matchedSub = dbSubjects.find(s => s.name?.toLowerCase() === lowerSub);
         if (matchedSub) {
-          paddedRow[8] = matchedSub;
+          paddedRow[8] = matchedSub.name;
         } else {
           paddedRow[8] = rawSubject.charAt(0).toUpperCase() + rawSubject.slice(1);
         }
@@ -785,7 +871,7 @@ export default function CustomAdminPanel({
       else if (keyVal === "C" || keyVal === "2") paddedRow[6] = "2";
       else if (keyVal === "D" || keyVal === "3") paddedRow[6] = "3";
       else paddedRow[6] = "0";
-      
+
       newRows.push(paddedRow);
     }
     if (newRows.length > 0) {
@@ -810,10 +896,10 @@ export default function CustomAdminPanel({
 
       const mergedRows = [...cleanExistingRows, ...cleanParsed];
       setGridRows(mergedRows);
-      
+
       const serialized = serializeGridToCSV(mergedRows);
       setCsvModalText(serialized);
-      
+
       if (cleanExistingRows.length > 0) {
         setMessage(`📥 Added ${cleanParsed.length} questions below the existing sheet and expanded the question pool to ${mergedRows.length} total rows!`);
         triggerNotification(`Appended ${cleanParsed.length} imported questions below the existing sheet and expanded question pool.`);
@@ -835,12 +921,12 @@ export default function CustomAdminPanel({
         setCsvModalError("Spreadsheet is empty. Nothing to export.");
         return;
       }
-      
+
       const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.setAttribute("href", url);
-      
+
       let filename = "spreadsheet_mcqs.csv";
       if (csvModalTarget) {
         if (csvModalTarget.type === "set") {
@@ -850,13 +936,13 @@ export default function CustomAdminPanel({
           filename = `subject_${sanitizedSubject}_mcqs.csv`;
         }
       }
-      
+
       link.setAttribute("download", filename);
       link.style.visibility = "hidden";
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      
+
       setCsvModalError(null);
       triggerNotification(`Successfully exported and downloaded "${filename}"!`);
     } catch (error) {
@@ -884,7 +970,7 @@ export default function CustomAdminPanel({
         }
 
         const topicVal = row[9] || "";
-        const topicsList = getTopicsForSubject(subVal, examType);
+        const topicsList = getTopicsForSubject(subVal);
         if (topicVal && !topicsList.includes(topicVal)) {
           initialCustomTopics[rIdx] = true;
         }
@@ -943,10 +1029,10 @@ export default function CustomAdminPanel({
             questions: parsed
           };
           setActiveEditSet(updatedSet);
-          
+
           const updatedSets = allSets.map(s => s.id === updatedSet.id ? updatedSet : s);
           onSaveSets(updatedSets);
-          
+
           triggerNotification(`Successfully updated & synchronized ${parsed.length} questions in set "${activeEditSet.title}"!`);
         }
       } else if (csvModalTarget.type === "subject") {
@@ -954,7 +1040,7 @@ export default function CustomAdminPanel({
         const otherIndependent = independentQuestions.filter(q => q.subject !== subjectName);
         const updatedIndependent = [...otherIndependent, ...parsed];
         onSaveIndependentQuestions(updatedIndependent);
-        
+
         triggerNotification(`Successfully updated & synchronized ${parsed.length} independent questions in subject folder "${subjectName}"!`);
       }
 
@@ -968,7 +1054,12 @@ export default function CustomAdminPanel({
   };
 
   const handleEditClick = (set: QuestionSet) => {
-    setActiveEditSet(JSON.parse(JSON.stringify(set)));
+    const isNew = !allSets.some(s => s.id === set.id);
+    if (isNew) {
+      navigate("/admin/mcq-editor/create");
+    } else {
+      navigate(`/admin/mcq-editor/edit/${set.id}`);
+    }
   };
 
   const renderCSVModal = () => {
@@ -1014,7 +1105,7 @@ export default function CustomAdminPanel({
                   </>
                 )}
               </button>
-              
+
               <button
                 type="button"
                 onClick={() => {
@@ -1035,27 +1126,25 @@ export default function CustomAdminPanel({
               <button
                 type="button"
                 onClick={() => setCsvTab("spreadsheet")}
-                className={`px-4 py-2 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
-                  csvTab === "spreadsheet"
-                    ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/10"
-                    : "text-slate-400 hover:text-white"
-                }`}
+                className={`px-4 py-2 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${csvTab === "spreadsheet"
+                  ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/10"
+                  : "text-slate-400 hover:text-white"
+                  }`}
               >
                 📊 Spreadsheet Grid
               </button>
               <button
                 type="button"
                 onClick={() => setCsvTab("raw")}
-                className={`px-4 py-2 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
-                  csvTab === "raw"
-                    ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/10"
-                    : "text-slate-400 hover:text-white"
-                }`}
+                className={`px-4 py-2 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${csvTab === "raw"
+                  ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/10"
+                  : "text-slate-400 hover:text-white"
+                  }`}
               >
                 📝 Raw CSV Text
               </button>
             </div>
-            
+
             {csvTab === "spreadsheet" && (
               <div className="flex items-center gap-2">
                 <button
@@ -1069,15 +1158,14 @@ export default function CustomAdminPanel({
                   <Plus className="w-4 h-4" />
                   <span>Add Row</span>
                 </button>
-                
+
                 <button
                   type="button"
                   onClick={() => setShowPasteArea(!showPasteArea)}
-                  className={`text-[11px] font-bold px-3 py-2 rounded-xl border flex items-center gap-1.5 cursor-pointer transition-all ${
-                    showPasteArea 
-                      ? "bg-amber-600/20 border-amber-500 text-amber-300" 
-                      : "bg-slate-900 hover:bg-slate-800 border-slate-800 text-slate-300"
-                  }`}
+                  className={`text-[11px] font-bold px-3 py-2 rounded-xl border flex items-center gap-1.5 cursor-pointer transition-all ${showPasteArea
+                    ? "bg-amber-600/20 border-amber-500 text-amber-300"
+                    : "bg-slate-900 hover:bg-slate-800 border-slate-800 text-slate-300"
+                    }`}
                   title="Paste clipboard rows copied from Microsoft Excel or Google Sheets"
                 >
                   <span>📋 Paste Excel Rows</span>
@@ -1258,12 +1346,12 @@ export default function CustomAdminPanel({
                               copy[rIdx] = padded;
                               setGridRows(copy);
                             };
-                            
+
                             const examType = getModalExamType();
                             const subjectsList = getModalSubjects();
                             const subjectVal = cellVal(8);
-                            const topicsList = getTopicsForSubject(subjectVal, examType);
-                            
+                            const topicsList = getTopicsForSubject(subjectVal);
+
                             return (
                               <tr key={rIdx} className="hover:bg-slate-850/50 transition-colors group">
                                 <td className="px-3 py-2 bg-slate-955 text-center text-[10px] text-slate-500 font-sans font-bold border-r border-slate-855 sticky left-0 z-20 group-hover:bg-slate-900">
@@ -1370,7 +1458,7 @@ export default function CustomAdminPanel({
                                         onChange={(e) => {
                                           const newVal = e.target.value;
                                           updateCell(8, newVal);
-                                          const topics = getTopicsForSubject(newVal, examType);
+                                          const topics = getTopicsForSubject(newVal);
                                           if (topics.length > 0) {
                                             updateCell(9, topics[0]);
                                           } else {
@@ -1514,7 +1602,7 @@ export default function CustomAdminPanel({
                     <X className="w-4 h-4" />
                   </button>
                 </div>
-                
+
                 <div className="p-6 overflow-y-auto flex-1 bg-slate-900">
                   <RichTextEditor
                     value={richCellEdit.value}
@@ -1554,105 +1642,36 @@ export default function CustomAdminPanel({
     );
   };
 
-  // Detailed set editor screen overlay
-  if (activeEditSet) {
-    return (
-      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans w-full relative overflow-y-auto p-4 md:p-8">
-        {message && (
-          <div className="mb-6 p-4 bg-violet-500/15 border border-violet-500/30 text-violet-400 font-semibold text-xs rounded-xl animate-pulse flex items-center gap-2">
-            <Info className="w-4 h-4" />
-            <span>{message}</span>
-          </div>
-        )}
-        <EditSetOverlay
-          activeEditSet={activeEditSet}
-          setActiveEditSet={setActiveEditSet}
-          allSets={allSets}
-          onSaveSets={onSaveSets}
-          handleOpenCSVEditorForSet={handleOpenCSVEditorForSet}
-          askConfirmation={askConfirmation}
-          triggerNotification={triggerNotification}
-        />
-        {renderCSVModal()}
 
-        {/* Custom Confirmation Modal */}
-        {confirmModal && confirmModal.isOpen && (
-          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-955/85 backdrop-blur-sm font-sans animate-in fade-in duration-200">
-            <div className="bg-slate-900 border border-slate-800 w-full max-w-md rounded-2xl p-6 shadow-2xl space-y-5 text-slate-100 animate-in zoom-in-95 duration-200">
-              <div className="flex items-start gap-3 pb-2 border-b border-slate-800">
-                <div className="p-2.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-xl shrink-0 mt-0.5 animate-bounce">
-                  <AlertCircle className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-base font-extrabold text-white leading-tight">
-                    {confirmModal.title}
-                  </h3>
-                  <p className="text-[10px] text-slate-400 mt-1 uppercase font-bold tracking-wider">
-                    Action Required
-                  </p>
-                </div>
-              </div>
-
-              <p className="text-xs text-slate-300 leading-relaxed">
-                {confirmModal.message}
-              </p>
-
-              <div className="flex justify-end gap-2.5 pt-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    const onCancelAction = confirmModal.onCancel;
-                    setConfirmModal(null);
-                    if (onCancelAction) onCancelAction();
-                  }}
-                  className="bg-slate-800 hover:bg-slate-755 text-slate-300 font-bold text-xs px-4.5 py-2.5 rounded-xl transition-all cursor-pointer border border-slate-700"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const onConfirmAction = confirmModal.onConfirm;
-                    setConfirmModal(null);
-                    onConfirmAction();
-                  }}
-                  className="bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs px-5.5 py-2.5 rounded-xl transition-all cursor-pointer shadow-lg shadow-emerald-600/15"
-                >
-                  Confirm Yes
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex font-sans w-full relative overflow-hidden">
-      
+
       {/* Mobile Menu Backdrop */}
       {isMobileMenuOpen && (
-        <div 
+        <div
           className="fixed inset-0 z-35 bg-slate-950/80 backdrop-blur-sm md:hidden"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
 
       {/* 🚀 SIDEBAR NAVIGATION */}
-      <aside className={`fixed md:relative inset-y-0 left-0 z-40 w-64 bg-slate-900 border-r border-slate-800 p-6 flex flex-col justify-between shrink-0 transform transition-transform duration-300 ease-in-out ${
-        isMobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
-      }`}>
+      <aside className={`fixed md:relative inset-y-0 left-0 z-40 bg-slate-900 border-r border-slate-800 p-6 flex flex-col justify-between shrink-0 transform transition-all duration-300 ease-in-out ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+        } ${isSidebarCollapsed ? "md:w-20 md:p-2 md:overflow-hidden md:border-r-0" : "md:w-64"}`}>
         <div className="space-y-7">
           <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
+            <div className={`flex items-center gap-3 ${isSidebarCollapsed ? "justify-center" : ""}`}>
               <div className="w-10 h-10 bg-gradient-to-tr from-violet-500 to-indigo-400 rounded-xl flex items-center justify-center shadow-lg shadow-violet-500/10 animate-pulse">
                 <GraduationCap className="w-6 h-6 text-slate-950 animate-none" />
               </div>
-              <div>
-                <h2 className="font-bold text-sm text-white uppercase tracking-wider">{cmsBrandName || "nepmedmcq"}</h2>
-                <span className="text-[10px] text-violet-400 font-semibold tracking-widest uppercase">Admin Panel</span>
-              </div>
+
+              {/* Hide this div when collapsed */}
+              {!isSidebarCollapsed && (
+                <div>
+                  <h2 className="font-bold text-sm text-white uppercase tracking-wider">{cmsBrandName || "nepmedmcq"}</h2>
+                  <span className="text-[10px] text-violet-400 font-semibold tracking-widest uppercase">Admin Panel</span>
+                </div>
+              )}
             </div>
             <button
               type="button"
@@ -1667,134 +1686,148 @@ export default function CustomAdminPanel({
             <button
               type="button"
               onClick={() => { setAdminTab("dashboard"); setIsMobileMenuOpen(false); }}
-              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                adminTab === "dashboard"
-                  ? "bg-violet-500/15 text-violet-400 border-l-4 border-violet-500"
-                  : "text-slate-400 hover:text-white hover:bg-slate-800/40"
-              }`}
+              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${adminTab === "dashboard"
+                ? "bg-violet-500/15 text-violet-400 border-l-4 border-violet-500"
+                : "text-slate-400 hover:text-white hover:bg-slate-800/40"
+                }`}
             >
               <Sliders className="w-4 h-4 text-violet-400 shrink-0" />
-              <span>Dashboard Home</span>
-            </button>
+              <span className={`${isSidebarCollapsed ? "hidden md:hidden" : "block"}`}>
+                Dashboard Home
+              </span>            </button>
 
             <button
               type="button"
               onClick={() => { setAdminTab("exams"); setIsMobileMenuOpen(false); }}
-              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                adminTab === "exams"
-                  ? "bg-violet-500/15 text-violet-400 border-l-4 border-violet-500"
-                  : "text-slate-400 hover:text-white hover:bg-slate-800/40"
-              }`}
+              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${adminTab === "exams"
+                ? "bg-violet-500/15 text-violet-400 border-l-4 border-violet-500"
+                : "text-slate-400 hover:text-white hover:bg-slate-800/40"
+                }`}
             >
               <GraduationCap className="w-4 h-4 text-violet-400 shrink-0" />
-              <span>Target Board Exams</span>
+              <span className={`${isSidebarCollapsed ? "hidden md:hidden" : "block"}`}>Target Board Exams</span>
             </button>
 
             <button
               type="button"
               onClick={() => { setAdminTab("subjects"); setIsMobileMenuOpen(false); }}
-              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                adminTab === "subjects"
-                  ? "bg-violet-500/15 text-violet-400 border-l-4 border-violet-500"
-                  : "text-slate-400 hover:text-white hover:bg-slate-800/40"
-              }`}
+              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${adminTab === "subjects"
+                ? "bg-violet-500/15 text-violet-400 border-l-4 border-violet-500"
+                : "text-slate-400 hover:text-white hover:bg-slate-800/40"
+                }`}
             >
               <BookOpen className="w-4 h-4 text-violet-400 shrink-0" />
-              <span>Subjects Directory</span>
+              <span className={`${isSidebarCollapsed ? "hidden md:hidden" : "block"}`}>Subjects Directory</span>
             </button>
 
             <button
               type="button"
               onClick={() => { setAdminTab("topics"); setIsMobileMenuOpen(false); }}
-              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                adminTab === "topics"
-                  ? "bg-violet-500/15 text-violet-400 border-l-4 border-violet-500"
-                  : "text-slate-400 hover:text-white hover:bg-slate-800/40"
-              }`}
+              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${adminTab === "topics"
+                ? "bg-violet-500/15 text-violet-400 border-l-4 border-violet-500"
+                : "text-slate-400 hover:text-white hover:bg-slate-800/40"
+                }`}
             >
               <Tag className="w-4 h-4 text-violet-400 shrink-0" />
-              <span>Topics Directory</span>
+              <span className={`${isSidebarCollapsed ? "hidden md:hidden" : "block"}`}>Topics Directory</span>
             </button>
 
             <button
               type="button"
               onClick={() => { setAdminTab("papers"); setIsMobileMenuOpen(false); }}
-              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                adminTab === "papers"
-                  ? "bg-violet-500/15 text-violet-400 border-l-4 border-violet-500"
-                  : "text-slate-400 hover:text-white hover:bg-slate-800/40"
-              }`}
+              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${adminTab === "papers"
+                ? "bg-violet-500/15 text-violet-400 border-l-4 border-violet-500"
+                : "text-slate-400 hover:text-white hover:bg-slate-800/40"
+                }`}
             >
               <FileSpreadsheet className="w-4 h-4 text-violet-400 shrink-0" />
-              <span>MCQ Papers Editor</span>
+              <span className={`${isSidebarCollapsed ? "hidden md:hidden" : "block"}`}>MCQ Papers Editor</span>
             </button>
 
             <button
               type="button"
               onClick={() => { setAdminTab("questions"); setIsMobileMenuOpen(false); }}
-              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                adminTab === "questions"
-                  ? "bg-violet-500/15 text-violet-400 border-l-4 border-violet-500"
-                  : "text-slate-400 hover:text-white hover:bg-slate-800/40"
-              }`}
+              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${adminTab === "questions"
+                ? "bg-violet-500/15 text-violet-400 border-l-4 border-violet-500"
+                : "text-slate-400 hover:text-white hover:bg-slate-800/40"
+                }`}
             >
               <BookOpen className="w-4 h-4 text-violet-400 shrink-0" />
-              <span>Subject Folders Pool</span>
+              <span className={`${isSidebarCollapsed ? "hidden md:hidden" : "block"}`}>Subject Folders Pool</span>
             </button>
 
             <button
               type="button"
               onClick={() => { setAdminTab("review"); setIsMobileMenuOpen(false); }}
-              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                adminTab === "review"
-                  ? "bg-violet-500/15 text-violet-400 border-l-4 border-violet-500"
-                  : "text-slate-400 hover:text-white hover:bg-slate-800/40"
-              }`}
+              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${adminTab === "review"
+                ? "bg-violet-500/15 text-violet-400 border-l-4 border-violet-500"
+                : "text-slate-400 hover:text-white hover:bg-slate-800/40"
+                }`}
             >
               <Sparkles className="w-4 h-4 text-violet-400 shrink-0" />
-              <span>Review Proposed Queue</span>
+              <span className={`${isSidebarCollapsed ? "hidden md:hidden" : "block"}`}>Review Proposed Queue</span>
             </button>
 
             <button
               type="button"
               onClick={() => { setAdminTab("reports"); setIsMobileMenuOpen(false); }}
-              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                adminTab === "reports"
-                  ? "bg-violet-500/15 text-violet-400 border-l-4 border-violet-500"
-                  : "text-slate-400 hover:text-white hover:bg-slate-800/40"
-              }`}
+              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${adminTab === "reports"
+                ? "bg-violet-500/15 text-violet-400 border-l-4 border-violet-500"
+                : "text-slate-400 hover:text-white hover:bg-slate-800/40"
+                }`}
             >
               <Flag className="w-4 h-4 text-violet-400 shrink-0" />
-              <span>User Flagged Issues</span>
+              <span className={`${isSidebarCollapsed ? "hidden md:hidden" : "block"}`}>User Flagged Issues</span>
             </button>
 
             <button
               type="button"
               onClick={() => { setAdminTab("cms"); setIsMobileMenuOpen(false); }}
-              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                adminTab === "cms"
-                  ? "bg-violet-500/15 text-violet-400 border-l-4 border-violet-500"
-                  : "text-slate-400 hover:text-white hover:bg-slate-800/40"
-              }`}
+              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${adminTab === "cms"
+                ? "bg-violet-500/15 text-violet-400 border-l-4 border-violet-500"
+                : "text-slate-400 hover:text-white hover:bg-slate-800/40"
+                }`}
             >
               <Settings className="w-4 h-4 text-violet-400 shrink-0" />
-              <span>CMS Configs</span>
+              <span className={`${isSidebarCollapsed ? "hidden md:hidden" : "block"}`}>CMS Configs</span>
             </button>
           </nav>
         </div>
 
-        <div className="text-[10px] text-slate-500 border-t border-slate-800/60 pt-4">
-          <p>© 2026 Premium Admin Room.</p>
-          <p className="mt-0.5">Status: Standalone UI Sandbox</p>
+        <div className="border-t border-slate-800/60 pt-4 space-y-3 shrink-0">
+          {onLogout && (
+            <button
+              type="button"
+              onClick={onLogout}
+              className="w-full bg-slate-800 hover:bg-slate-700 text-slate-350 font-bold py-2 px-3.5 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer border border-slate-800"
+            >
+              <LogOut className="w-4 h-4" />
+              <span className={`${isSidebarCollapsed ? "hidden md:hidden" : "block"}`}>Sign Out</span>
+            </button>
+          )}
+
+          <div className={`${isSidebarCollapsed ? "hidden md:hidden" : "text-[10px] text-slate-500 text-center"} `}  >
+            <p>© 2026 Premium Admin Room.</p>
+            <p className="mt-0.5">Status: Standalone Admin Workspace</p>
+          </div>
         </div>
       </aside>
 
       {/* 🚀 MAIN CONTENT CONTAINER */}
       <main className="flex-1 flex flex-col min-w-0 bg-slate-950 relative overflow-y-auto">
-        
+
         {/* Floating Header */}
         <header className="h-16 border-b border-slate-800/80 px-4 md:px-8 flex justify-between items-center bg-slate-900/30 backdrop-blur-sm shrink-0">
           <div className="flex items-center gap-3">
+            {/* Desktop Sidebar Collapse Toggle */}
+            <button
+              type="button"
+              onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+              className="hidden md:flex p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 cursor-pointer"
+              title={isSidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+            >
+              <Menu className="w-5 h-5" />
+            </button>
             <button
               type="button"
               onClick={() => setIsMobileMenuOpen(true)}
@@ -1816,13 +1849,21 @@ export default function CustomAdminPanel({
           </div>
 
           <div className="flex items-center gap-4 text-xs font-sans">
-            <span className="px-2.5 py-0.5 md:px-3 md:py-1 bg-slate-800/60 border border-slate-700 text-slate-400 rounded-full font-mono text-[10px] md:text-xs">
-              Target: <strong className="text-white uppercase">{targetExam}</strong>
-            </span>
+            {/* Theme Toggle Button */}
+            {setTheme && (
+              <button
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                className="p-1.5 rounded-xl bg-slate-950/60 hover:bg-slate-800/40 border border-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer flex items-center justify-center"
+                aria-label="Toggle Theme"
+              >
+                {theme === "dark" ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5 text-indigo-400" />}
+              </button>
+            )}
+            {/* Target Exam display removed per instruction */}
           </div>
         </header>
 
-        <div className="p-4 md:p-8 flex-1">
+        <div className="pt-2 px-4 pb-4 md:pt-4 md:px-8 md:pb-8 flex-1">
           {message && (
             <div className="mb-6 p-4 bg-violet-500/15 border border-violet-500/30 text-violet-400 font-semibold text-xs rounded-xl animate-pulse flex items-center gap-2">
               <Info className="w-4 h-4" />
@@ -1872,15 +1913,39 @@ export default function CustomAdminPanel({
           )}
 
           {adminTab === "papers" && (
-            <PapersTab
-              allSets={allSets}
-              onSaveSets={onSaveSets}
-              cmsTargetExams={cmsTargetExams}
-              cmsContent={cmsContent}
-              setMessage={setMessage}
-              askConfirmation={askConfirmation}
-              handleEditClick={handleEditClick}
-            />
+            activeEditSet ? (
+              <EditSetOverlay
+                activeEditSet={activeEditSet}
+                setActiveEditSet={(val) => {
+                  if (val === null) {
+                    navigate("/admin/mcq-editor");
+                  } else {
+                    setActiveEditSet(val);
+                  }
+                }}
+                allSets={allSets}
+                onSaveSets={onSaveSets}
+                independentQuestions={independentQuestions}
+                onSaveIndependentQuestions={onSaveIndependentQuestions}
+                dbExams={dbExams}
+                dbSubjects={dbSubjects}
+                dbTopics={dbTopics}
+                setMessage={setMessage}
+                handleOpenCSVEditorForSet={handleOpenCSVEditorForSet}
+                askConfirmation={askConfirmation}
+                triggerNotification={triggerNotification}
+              />
+            ) : (
+              <PapersTab
+                allSets={allSets}
+                onSaveSets={onSaveSets}
+                cmsTargetExams={dbExams}
+                cmsContent={cmsContent}
+                setMessage={setMessage}
+                askConfirmation={askConfirmation}
+                handleEditClick={handleEditClick}
+              />
+            )
           )}
 
           {adminTab === "questions" && (
@@ -1890,6 +1955,8 @@ export default function CustomAdminPanel({
               allSets={allSets}
               setMessage={setMessage}
               handleOpenCSVEditorForSubject={handleOpenCSVEditorForSubject}
+              dbSubjects={dbSubjects}
+              dbTopics={dbTopics}
             />
           )}
 

@@ -73,6 +73,42 @@ export default function PracticeSession({
   const [isTimeUp, setIsTimeUp] = useState(false);
   const [revealedTutorAnswers, setRevealedTutorAnswers] = useState<{ [qId: string]: boolean }>({});
   
+  // Local Questions State (Lazy loading from DB)
+  const [localQuestions, setLocalQuestions] = useState<Question[]>(set.questions || []);
+  const [isLoadingQuestions, setIsLoadingQuestions] = useState(set.questions.length === 0);
+
+  useEffect(() => {
+    if (set.questions.length === 0 && set.id && set.id !== "custom_workout") {
+      setIsLoadingQuestions(true);
+      fetch(`/api/question-sets/${set.id}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.status && data.set && data.set.questions) {
+            const mappedQs = data.set.questions.map((q: any) => {
+              const correctIndex = q.options.findIndex((o: any) => o.is_correct || o.is_correct === 1 || o.is_correct === true);
+              return {
+                id: String(q.id),
+                questionText: q.question_text,
+                options: q.options.sort((a: any, b: any) => a.option_index - b.option_index).map((o: any) => o.option_text),
+                correctOptionIndex: correctIndex !== -1 ? correctIndex : 0,
+                explanation: q.explanation || "",
+                subject: q.subject?.name || "",
+                topic: q.topic?.name || ""
+              };
+            });
+            setLocalQuestions(mappedQs);
+          } else {
+            console.error("Failed to load questions for set", set.id);
+          }
+        })
+        .catch(err => console.error("Error loading set questions:", err))
+        .finally(() => setIsLoadingQuestions(false));
+    } else {
+      setLocalQuestions(set.questions);
+      setIsLoadingQuestions(false);
+    }
+  }, [set.id, set.questions]);
+
   // Double back click states
   const [backClickCount, setBackClickCount] = useState(0);
   const [backToastVisible, setBackToastVisible] = useState(false);
@@ -235,7 +271,7 @@ export default function PracticeSession({
   };
 
   const handleNext = () => {
-    if (currentIdx < set.questions.length - 1) {
+    if (currentIdx < localQuestions.length - 1) {
       setCurrentIdx(prev => prev + 1);
     }
   };
@@ -255,7 +291,7 @@ export default function PracticeSession({
     let incorrect = 0;
     let left = 0;
 
-    set.questions.forEach(q => {
+    localQuestions.forEach(q => {
       const selected = selectedAnswers[q.id];
       if (selected === undefined || selected === -1) {
         left++;
@@ -284,7 +320,7 @@ export default function PracticeSession({
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const activeQuestion = set.questions[currentIdx];
+  const activeQuestion = localQuestions[currentIdx];
   const isBookmarked = activeQuestion ? bookmarks.some(b => b.questionId === activeQuestion.id) : false;
 
   // Render Mode Selection screen before entering active session
@@ -305,7 +341,11 @@ export default function PracticeSession({
             </span>
             <h3 className="text-lg font-bold text-white tracking-tight leading-snug truncate">{set.title}</h3>
             <p className="text-slate-400 text-[10px] mt-0.5">
-              Contains {set.questions.length} high-yield boards questions • Duration: {set.durationMinutes} Minutes
+              {isLoadingQuestions ? (
+                <span className="animate-pulse">Loading questions...</span>
+              ) : (
+                `Contains ${localQuestions.length} high-yield boards questions • Duration: ${set.durationMinutes} Minutes`
+              )}
             </p>
           </div>
         </div>
@@ -314,13 +354,18 @@ export default function PracticeSession({
           {/* Tutor Mode Selector */}
           <button
             onClick={() => handleStartSession("tutor")}
-            className="p-5 bg-slate-950/40 hover:bg-slate-800/40 border border-slate-800 hover:border-emerald-500/30 rounded-xl text-left transition-all cursor-pointer group flex items-start gap-4"
+            disabled={isLoadingQuestions}
+            className={`p-5 rounded-xl text-left transition-all flex items-start gap-4 ${
+              isLoadingQuestions
+                ? "bg-slate-900/50 border border-slate-800 opacity-50 cursor-not-allowed"
+                : "bg-slate-950/40 hover:bg-slate-800/40 border border-slate-800 hover:border-emerald-500/30 cursor-pointer group"
+            }`}
           >
-            <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center shrink-0">
-              <BookOpen className="w-5 h-5 text-indigo-400" />
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isLoadingQuestions ? "bg-slate-800 border border-slate-700" : "bg-indigo-500/10 border border-indigo-500/20"}`}>
+              <BookOpen className={`w-5 h-5 ${isLoadingQuestions ? "text-slate-500" : "text-indigo-400"}`} />
             </div>
             <div>
-              <h4 className="font-bold text-white group-hover:text-emerald-400 transition-colors">Study & Tutor Mode</h4>
+              <h4 className={`font-bold transition-colors ${isLoadingQuestions ? "text-slate-400" : "text-white group-hover:text-emerald-400"}`}>Study & Tutor Mode</h4>
               <p className="text-xs text-slate-400 mt-1 leading-relaxed">
                 Take your time. Explanations are shown immediately upon selecting each option. Ideal for concept building, active recall, and referencing medical literature.
               </p>
@@ -330,13 +375,18 @@ export default function PracticeSession({
           {/* Timed Mode Selector */}
           <button
             onClick={() => handleStartSession("timed")}
-            className="p-5 bg-slate-950/40 hover:bg-slate-800/40 border border-slate-800 hover:border-emerald-500/30 rounded-xl text-left transition-all cursor-pointer group flex items-start gap-4"
+            disabled={isLoadingQuestions}
+            className={`p-5 rounded-xl text-left transition-all flex items-start gap-4 ${
+              isLoadingQuestions
+                ? "bg-slate-900/50 border border-slate-800 opacity-50 cursor-not-allowed"
+                : "bg-slate-950/40 hover:bg-slate-800/40 border border-slate-800 hover:border-emerald-500/30 cursor-pointer group"
+            }`}
           >
-            <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shrink-0">
-              <Clock className="w-5 h-5 text-amber-400" />
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isLoadingQuestions ? "bg-slate-800 border border-slate-700" : "bg-amber-500/10 border border-amber-500/20"}`}>
+              <Clock className={`w-5 h-5 ${isLoadingQuestions ? "text-slate-500" : "text-amber-400"}`} />
             </div>
             <div>
-              <h4 className="font-bold text-white group-hover:text-emerald-400 transition-colors">Exam Timed Simulator</h4>
+              <h4 className={`font-bold transition-colors ${isLoadingQuestions ? "text-slate-400" : "text-white group-hover:text-emerald-400"}`}>Exam Timed Simulator</h4>
               <p className="text-xs text-slate-400 mt-1 leading-relaxed">
                 Realistic exam constraints. Strictly timed with a count-down. Review your overall scores, success rates, and full standard/Gemini explanations only after finishing.
               </p>
@@ -348,10 +398,10 @@ export default function PracticeSession({
   }
 
   if (hasSubmitted) {
-    const totalCount = set.questions.length;
-    const correctCount = set.questions.filter(q => selectedAnswers[q.id] === q.correctOptionIndex).length;
-    const incorrectCount = set.questions.filter(q => selectedAnswers[q.id] !== undefined && selectedAnswers[q.id] !== -1 && selectedAnswers[q.id] !== q.correctOptionIndex).length;
-    const leftCount = set.questions.filter(q => selectedAnswers[q.id] === undefined || selectedAnswers[q.id] === -1).length;
+    const totalCount = localQuestions.length;
+    const correctCount = localQuestions.filter(q => selectedAnswers[q.id] === q.correctOptionIndex).length;
+    const incorrectCount = localQuestions.filter(q => selectedAnswers[q.id] !== undefined && selectedAnswers[q.id] !== -1 && selectedAnswers[q.id] !== q.correctOptionIndex).length;
+    const leftCount = localQuestions.filter(q => selectedAnswers[q.id] === undefined || selectedAnswers[q.id] === -1).length;
     
     const correctMarks = set.correctMarks ?? 1;
     const incorrectMarks = set.incorrectMarks ?? 0.25;
@@ -564,7 +614,7 @@ export default function PracticeSession({
               </div>
 
               <div className="grid grid-cols-5 sm:grid-cols-10 gap-2.5">
-                {set.questions.map((q, idx) => {
+                {localQuestions.map((q, idx) => {
                   const userAnsIdx = selectedAnswers[q.id];
                   const isCorrect = userAnsIdx === q.correctOptionIndex;
                   const hasAnswered = userAnsIdx !== undefined && userAnsIdx !== -1;
@@ -619,7 +669,7 @@ export default function PracticeSession({
               </h4>
               
               <div className="grid grid-cols-5 sm:grid-cols-10 gap-2">
-                {set.questions.map((q, idx) => {
+                {localQuestions.map((q, idx) => {
                   const userAnsIdx = selectedAnswers[q.id];
                   const isCorrect = userAnsIdx === q.correctOptionIndex;
                   const hasAnswered = userAnsIdx !== undefined && userAnsIdx !== -1;
@@ -670,7 +720,7 @@ export default function PracticeSession({
 
             {/* Scrollable Solved Set List */}
             <div className="space-y-6">
-              {set.questions.map((q, idx) => {
+              {localQuestions.map((q, idx) => {
                 const userAnsIdx = selectedAnswers[q.id];
                 const isCorrect = userAnsIdx === q.correctOptionIndex;
                 const hasAnswered = userAnsIdx !== undefined && userAnsIdx !== -1;
@@ -940,7 +990,7 @@ export default function PracticeSession({
           {/* Question Meta Row */}
           <div className="flex justify-between items-center border-b border-slate-800/80 pb-3 mb-5">
             <span className="text-xs text-slate-400 font-mono font-semibold">
-              Question {currentIdx + 1} of {set.questions.length}
+              Question {currentIdx + 1} of {localQuestions.length}
             </span>
             <div className="flex items-center gap-2">
               {/* Report Issue Button */}
@@ -1084,7 +1134,7 @@ export default function PracticeSession({
             <ChevronLeft className="w-4 h-4" /> Previous
           </button>
           
-          {currentIdx === set.questions.length - 1 ? (
+          {currentIdx === localQuestions.length - 1 ? (
             <button
               onClick={() => {
                 const confirmMsg = sessionMode === "timed" 
@@ -1141,19 +1191,19 @@ export default function PracticeSession({
               <div className="bg-emerald-500/10 border border-emerald-500/20 p-2 rounded-lg text-emerald-400">
                 <p className="text-[10px] text-slate-400 font-medium">Correct</p>
                 <p className="text-lg font-black mt-1">
-                  {set.questions.filter(q => selectedAnswers[q.id] === q.correctOptionIndex).length}
+                  {localQuestions.filter(q => selectedAnswers[q.id] === q.correctOptionIndex).length}
                 </p>
               </div>
               <div className="bg-red-500/10 border border-red-500/20 p-2 rounded-lg text-red-400">
                 <p className="text-[10px] text-slate-400 font-medium">Incorrect</p>
                 <p className="text-lg font-black mt-1">
-                  {set.questions.filter(q => selectedAnswers[q.id] !== undefined && selectedAnswers[q.id] !== -1 && selectedAnswers[q.id] !== q.correctOptionIndex).length}
+                  {localQuestions.filter(q => selectedAnswers[q.id] !== undefined && selectedAnswers[q.id] !== -1 && selectedAnswers[q.id] !== q.correctOptionIndex).length}
                 </p>
               </div>
               <div className="bg-slate-800/80 border border-slate-700/60 p-2 rounded-lg text-slate-300">
                 <p className="text-[10px] text-slate-400 font-medium">Left</p>
                 <p className="text-lg font-black mt-1">
-                  {set.questions.filter(q => selectedAnswers[q.id] === undefined || selectedAnswers[q.id] === -1).length}
+                  {localQuestions.filter(q => selectedAnswers[q.id] === undefined || selectedAnswers[q.id] === -1).length}
                 </p>
               </div>
             </div>
@@ -1172,7 +1222,7 @@ export default function PracticeSession({
           <h4 className="font-bold text-white text-sm mb-3">Questions Navigator</h4>
           
           <div className="grid grid-cols-5 gap-2">
-            {set.questions.map((q, idx) => {
+            {localQuestions.map((q, idx) => {
               const isSelected = selectedAnswers[q.id] !== undefined;
               const isCorrect = selectedAnswers[q.id] === q.correctOptionIndex;
               const isCurrent = idx === currentIdx;
