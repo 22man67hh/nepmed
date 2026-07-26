@@ -17,6 +17,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
 
        $table->foreignId('question_id')->constrained()->onDelete('cascade');
+       $table->foreignId('question_set_id')->nullable()->constrained('question_sets')->onDelete('cascade');
 
             $table->boolean('is_correct');
             $table->unsignedTinyInteger('selected_option_index')->nullable();

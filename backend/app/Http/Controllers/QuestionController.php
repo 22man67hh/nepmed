@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Question;
+use App\Models\Subject;
 use App\Models\Topic;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -11,7 +12,7 @@ class QuestionController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Question::with(['options', 'subject', 'topic']);
+        $query = Question::with(['options', 'subject', 'topic', 'tags']);
 
         if ($request->has('subject_id')) {
             $query->where('subject_id', $request->input('subject_id'));
@@ -21,7 +22,11 @@ class QuestionController extends Controller
             $query->where('topic_id', $request->input('topic_id'));
         }
 
-        $perPage = $request->get('per_page', 10);
+        if ($request->has('search')) {
+            $query->where('question_text', 'LIKE', '%' . $request->input('search') . '%');
+        }
+
+        $perPage = $request->get('per_page', 40);
         $questions = $query->latest()->paginate($perPage);
 
         return response()->json([
@@ -41,51 +46,92 @@ class QuestionController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-public function singleStore(Request $request){
-    $request->validate([
-        'subject_id' => 'required|exists:subjects,uuid',
-        'questionText' => 'required|string',
-        'explanation' => 'required|string',
-        'topic_id'=>'nullable|exists:topics,id',
-        'options' => 'required|array|min:4',
-        'options.*.optionText' => 'required|string',
-        'options.*.isCorrect' => 'required|boolean',
-        'options.*.optionIndex' => 'required|integer',
-    ]);
+    public function singleStore(Request $request)
+    {
+        $request->validate([
+            'subject_id' => 'nullable|exists:subjects,uuid',
+            'subjectName' => 'nullable|string',
+            'questionText' => 'required|string',
+            'explanation' => 'required|string',
+            'topic_id' => 'nullable|exists:topics,id',
+            'topicName' => 'nullable|string',
+            'options' => 'required|array|min:4',
+            'options.*.optionText' => 'required|string',
+            'options.*.isCorrect' => 'required|boolean',
+            'options.*.optionIndex' => 'required|integer',
+            'tags' => 'nullable|array',
+            'tags.*' => 'string',
+        ]);
 
-    $correctCount = collect($request->input('options'))->where('isCorrect', true)->count();
-    if ($correctCount !== 1) {
+        $correctCount = collect($request->input('options'))->where('isCorrect', true)->count();
+        if ($correctCount !== 1) {
+            return response()->json([
+                'message' => "Validation failed: Question options must have exactly one correct option. Found {$correctCount}.",
+                'errors' => [
+                    "options" => ["Each question must have exactly one correct option."]
+                ]
+            ], 422);
+        }
+
+        $subject = Subject::where('name', $request->input('subjectName'))->first();
+        if (!$subject) {
+            // return response()->json([
+            //     'status' => false,
+            //     'message' => "Validation failed: Subject not found.",
+            //     'errors' => [
+            //         "subject_name" => ["Subject not found."]
+            //     ]
+            // ], 422);
+          $subject =  Subject::create([
+                'name' => $request->input('subjectName'),
+                'status'=>'active'
+            ]);
+        }
+        $topic = Topic::where('name', $request->input('topicName'))->first();
+        if (!$topic) {
+            // return response()->json([
+            //     'status' => false,
+            //     'message' => "Validation failed: Topic not found.",
+            //     'errors' => [
+            //         "topic_id" => ["Topic not found."]
+            //     ]
+            // ], 422);
+       $topic =     Topic::create([
+                'name' => $request->input('topicName'),
+                'subject_id' => $subject->uuid,
+
+            ]);
+        }
+
+        $question = Question::create([
+            'question_text' => $request->input('questionText'),
+            'explanation' => $request->input('explanation'),
+            'subject_id' => $subject->uuid,
+            'topic_id' => $topic->id
+        ]);
+
+        foreach ($request->input('options') as $optData) {
+            $option = $question->options()->create([
+                'option_text' => $optData['optionText'],
+                'is_correct' => $optData['isCorrect'],
+                'option_index' => $optData['optionIndex'],
+            ]);
+        }
+
+        if ($request->has('tags') && is_array($request->input('tags'))) {
+            foreach ($request->input('tags') as $tagName) {
+                $question->tags()->create(['tag_name' => $tagName]);
+            }
+        }
+
+        $question->load(['options', 'subject', 'topic', 'tags']);
+
         return response()->json([
-            'message' => "Validation failed: Question options must have exactly one correct option. Found {$correctCount}.",
-            'errors' => [
-                "options" => ["Each question must have exactly one correct option."]
-            ]
-        ], 422);
-    }
-
-    $question = Question::create([
-        'subject_id' => $request->input('subject_id'),
-        'questionText' => $request->input('questionText'),
-        'explanation' => $request->input('explanation'),
-        'topic_id'=>$request->input('topic_id'),
-
-    ]);
-
-    foreach ($request->input('options') as $optData) {
-        $option = $question->options()->create([
-            'option_text' => $optData['optionText'],
-            'is_correct' => $optData['isCorrect'],
-            'option_index' => $optData['optionIndex'],
+            'status' => true,
+            'question' => $question,
+            'message' => 'Question created successfully.'
         ]);
     }
-
-    return response()->json([
-        'status' => true,
-        'question' => $question,
-        'message' => 'Question created successfully.'
-    ]);
-
-}
 
     public function store(Request $request)
     {
@@ -100,6 +146,8 @@ public function singleStore(Request $request){
             'questions.*.options.*.optionText' => 'required|string',
             'questions.*.options.*.isCorrect' => 'required|boolean',
             'questions.*.options.*.optionIndex' => 'required|integer',
+            'questions.*.tags' => 'nullable|array',
+            'questions.*.tags.*' => 'string',
         ]);
 
         foreach ($request->input('questions') as $index => $qData) {
@@ -150,6 +198,12 @@ public function singleStore(Request $request){
                     ]);
                 }
 
+                if (isset($qData['tags']) && is_array($qData['tags'])) {
+                    foreach ($qData['tags'] as $tagName) {
+                        $question->tags()->create(['tag_name' => $tagName]);
+                    }
+                }
+
                 $createdQuestions[] = $question->load('options');
             }
 
@@ -190,6 +244,8 @@ public function singleStore(Request $request){
             'options.*.optionText' => 'required|string',
             'options.*.isCorrect' => 'required|boolean',
             'options.*.optionIndex' => 'required|integer',
+            'tags' => 'nullable|array',
+            'tags.*' => 'string',
         ]);
 
         if ($request->has('options')) {
@@ -246,6 +302,13 @@ public function singleStore(Request $request){
                         'is_correct' => $optData['isCorrect'],
                         'option_index' => $optData['optionIndex'],
                     ]);
+                }
+            }
+
+            if ($request->has('tags') && is_array($request->input('tags'))) {
+                $question->tags()->delete();
+                foreach ($request->input('tags') as $tagName) {
+                    $question->tags()->create(['tag_name' => $tagName]);
                 }
             }
 

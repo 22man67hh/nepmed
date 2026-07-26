@@ -1241,7 +1241,7 @@
       "label": "Primary Button (e.g. Save, Submit)",
       "text": "Submit Answer",
       "bgColor": "#6366f1",
-      "textColor": "#ffffff",
+      "textColor": "#fffda",
       "borderRadius": "rounded-xl"
     },
     {

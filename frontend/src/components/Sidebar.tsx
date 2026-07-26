@@ -29,8 +29,8 @@ import { UserProfile, CMSContent } from "../types";
 
 interface SidebarProps {
   userProfile: UserProfile;
-  activeScreen: "dashboard" | "bookmarks" | "admin" | "custom_admin" | "history" | "leaderboard" | "forum" | "about" | "practice" | "set_practice" | "subscription" | "refer_earn";
-  setActiveScreen: (screen: "dashboard" | "bookmarks" | "admin" | "custom_admin" | "history" | "leaderboard" | "forum" | "about" | "practice" | "set_practice" | "subscription" | "refer_earn") => void;
+  activeScreen: "dashboard" | "bookmarks" | "admin" | "custom_admin" | "history" | "leaderboard" | "forum" | "about" | "practice" | "set_practice" | "refer_earn";
+  setActiveScreen: (screen: "dashboard" | "bookmarks" | "admin" | "custom_admin" | "history" | "leaderboard" | "forum" | "about" | "practice" | "set_practice" | "refer_earn") => void;
   targetExam: string;
   setTargetExam: (exam: string) => void;
   onLogout: () => void;
@@ -166,7 +166,7 @@ export default function Sidebar({
                 { id: "history", label: cmsContent.sidebarLabels?.history || "My Report", enabled: true, order: 5 },
                 { id: "leaderboard", label: cmsContent.sidebarLabels?.leaderboard || "Leaderboard", enabled: true, order: 6 },
                 { id: "forum", label: cmsContent.sidebarLabels?.forum || "Discussion Forum", enabled: true, order: 7 },
-                { id: "subscription", label: cmsContent.sidebarLabels?.subscription || "Premium Subscription", enabled: false, order: 8 },
+                // { id: "subscription", label: cmsContent.sidebarLabels?.subscription || "Premium Subscription", enabled: false, order: 8 },
                 { id: "refer_earn", label: cmsContent.sidebarLabels?.refer_earn || "Refer & Earn", enabled: true, order: 9 },
                 { id: "about", label: cmsContent.sidebarLabels?.about || "About Us & Support", enabled: true, order: 10 }
               ];
@@ -189,7 +189,7 @@ export default function Sidebar({
                     case "history": return <History className="w-4 h-4 shrink-0" />;
                     case "leaderboard": return <Trophy className="w-4 h-4 shrink-0 text-amber-500" />;
                     case "forum": return <MessageSquare className="w-4 h-4 shrink-0 text-sky-400" />;
-                    case "subscription": return <CreditCard className="w-4 h-4 shrink-0 text-amber-400" />;
+                    // case "subscription": return <CreditCard className="w-4 h-4 shrink-0 text-amber-400" />;
                     case "refer_earn": return <Gift className="w-4 h-4 shrink-0 text-rose-400" />;
                     case "about": return <Info className="w-4 h-4 shrink-0 text-emerald-400" />;
                     default: return <LayoutDashboard className="w-4 h-4 shrink-0" />;

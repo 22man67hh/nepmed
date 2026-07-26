@@ -20,6 +20,8 @@ Route::apiResource('exams', App\Http\Controllers\ExamController::class);
 Route::post('/topics/bulk', [App\Http\Controllers\TopicController::class, 'bulkSync']);
 Route::apiResource('topics', App\Http\Controllers\TopicController::class);
 Route::apiResource('questions', App\Http\Controllers\QuestionController::class);
+Route::post('/question-import', [App\Http\Controllers\QuestionController::class, 'singleStore']);
 Route::post('/question-sets/{questionSet}/import', [App\Http\Controllers\QuestionSetController::class, 'importQuestions']);
 Route::apiResource('question-sets', App\Http\Controllers\QuestionSetController::class);
+Route::apiResource('premium-packages', App\Http\Controllers\PremiumPackageController::class);
 

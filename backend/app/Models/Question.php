@@ -29,4 +29,9 @@ class Question extends Model
                     ->withPivot('sort_order', 'source_refernce')
                     ->withTimestamps();
     }
+
+    public function tags()
+    {
+        return $this->hasMany(QuestionTag::class);
+    }
 }

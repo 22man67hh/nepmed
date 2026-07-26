@@ -153,7 +153,8 @@ export const SubjectFoldersPoolTab: React.FC<SubjectFoldersPoolTabProps> = ({
             correctOptionIndex: correctIndex !== -1 ? correctIndex : 0,
             explanation: dbQ.explanation,
             subject: selectedSubjectFolder,
-            topic: dbQ.topic ? dbQ.topic.name : "General"
+            topic: dbQ.topic ? dbQ.topic.name : "General",
+            tags: dbQ.tags ? dbQ.tags.map((t: any) => t.tag_name) : []
           };
         });
 
@@ -188,6 +189,8 @@ export const SubjectFoldersPoolTab: React.FC<SubjectFoldersPoolTabProps> = ({
   const [newIndCorrectIdx, setNewIndCorrectIdx] = useState(0);
   const [newIndExplanation, setNewIndExplanation] = useState("");
   const [newIndTopic, setNewIndTopic] = useState("");
+  const [newIndTags, setNewIndTags] = useState<string[]>([]);
+  const [newIndTagInput, setNewIndTagInput] = useState("");
 
   // Edit MCQ Form Fields
   const [editIndQuestionText, setEditIndQuestionText] = useState("");
@@ -195,6 +198,8 @@ export const SubjectFoldersPoolTab: React.FC<SubjectFoldersPoolTabProps> = ({
   const [editIndCorrectIdx, setEditIndCorrectIdx] = useState(0);
   const [editIndExplanation, setEditIndExplanation] = useState("");
   const [editIndTopic, setEditIndTopic] = useState("");
+  const [editIndTags, setEditIndTags] = useState<string[]>([]);
+  const [editIndTagInput, setEditIndTagInput] = useState("");
 
   // Bulk Upload
   const [adminBulkParsedQuestions, setAdminBulkParsedQuestions] = useState<Question[]>([]);
@@ -208,6 +213,7 @@ export const SubjectFoldersPoolTab: React.FC<SubjectFoldersPoolTabProps> = ({
     setEditIndCorrectIdx(q.correctOptionIndex);
     setEditIndExplanation(q.explanation || "");
     setEditIndTopic(q.topic || "");
+    setEditIndTags(q.tags || []);
   };
 
   const handleSaveEditIndependentQuestion = async () => {
@@ -221,6 +227,7 @@ export const SubjectFoldersPoolTab: React.FC<SubjectFoldersPoolTabProps> = ({
           questionText: editIndQuestionText,
           explanation: editIndExplanation,
           topic: editIndTopic,
+          tags: editIndTags,
           options: editIndOptions.map((opt, idx) => ({
             optionText: opt || `Option ${idx + 1}`,
             isCorrect: idx === editIndCorrectIdx,
@@ -282,6 +289,7 @@ export const SubjectFoldersPoolTab: React.FC<SubjectFoldersPoolTabProps> = ({
           questionText: newIndQuestionText,
           explanation: newIndExplanation,
           topicName: newIndTopic || "General",
+          tags: newIndTags,
           topic_id: null,
           options: newIndOptions.map((opt, idx) => ({
             optionText: opt || `Option ${idx + 1}`,
@@ -643,6 +651,36 @@ export const SubjectFoldersPoolTab: React.FC<SubjectFoldersPoolTabProps> = ({
                         </select>
                       </div>
                     ) : null}
+                    
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                        Question Tags (Press Enter to add)
+                      </label>
+                      <div className="bg-slate-955 border border-slate-800 rounded-xl p-2 flex flex-wrap gap-2 items-center">
+                        {newIndTags.map(tag => (
+                          <span key={tag} className="bg-emerald-500/20 text-emerald-400 text-xs px-2 py-1 rounded-md flex items-center gap-1 font-bold">
+                            {tag}
+                            <button type="button" onClick={() => setNewIndTags(prev => prev.filter(t => t !== tag))} className="text-emerald-400 hover:text-white"><X className="w-3 h-3" /></button>
+                          </span>
+                        ))}
+                        <input
+                          type="text"
+                          value={newIndTagInput}
+                          onChange={(e) => setNewIndTagInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" && newIndTagInput.trim()) {
+                              e.preventDefault();
+                              if (!newIndTags.includes(newIndTagInput.trim())) {
+                                setNewIndTags([...newIndTags, newIndTagInput.trim()]);
+                              }
+                              setNewIndTagInput("");
+                            }
+                          }}
+                          placeholder="e.g. Past Paper 2023, Hard..."
+                          className="bg-transparent flex-1 focus:outline-none text-xs text-white placeholder-slate-600 font-medium min-w-[120px]"
+                        />
+                      </div>
+                    </div>
 
                     <div>
                       <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
@@ -706,6 +744,8 @@ export const SubjectFoldersPoolTab: React.FC<SubjectFoldersPoolTabProps> = ({
                         setNewIndQuestionText("");
                         setNewIndOptions(["", "", "", ""]);
                         setNewIndExplanation("");
+                        setNewIndTags([]);
+                        setNewIndTagInput("");
                       }}
                       className="bg-slate-800 hover:bg-slate-755 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition-all cursor-pointer"
                     >
@@ -888,6 +928,37 @@ export const SubjectFoldersPoolTab: React.FC<SubjectFoldersPoolTabProps> = ({
                                 </select>
                               </div>
                             ) : null}
+
+                            <div className="md:col-span-2">
+                              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                                Question Tags (Press Enter to add)
+                              </label>
+                              <div className="bg-slate-955 border border-slate-800 rounded-xl p-2 flex flex-wrap gap-2 items-center">
+                                {editIndTags.map(tag => (
+                                  <span key={tag} className="bg-emerald-500/20 text-emerald-400 text-xs px-2 py-1 rounded-md flex items-center gap-1 font-bold">
+                                    {tag}
+                                    <button type="button" onClick={() => setEditIndTags(prev => prev.filter(t => t !== tag))} className="text-emerald-400 hover:text-white"><X className="w-3 h-3" /></button>
+                                  </span>
+                                ))}
+                                <input
+                                  type="text"
+                                  value={editIndTagInput}
+                                  onChange={(e) => setEditIndTagInput(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter" && editIndTagInput.trim()) {
+                                      e.preventDefault();
+                                      if (!editIndTags.includes(editIndTagInput.trim())) {
+                                        setEditIndTags([...editIndTags, editIndTagInput.trim()]);
+                                      }
+                                      setEditIndTagInput("");
+                                    }
+                                  }}
+                                  placeholder="e.g. Past Paper 2023, Hard..."
+                                  className="bg-transparent flex-1 focus:outline-none text-xs text-white placeholder-slate-600 font-medium min-w-[120px]"
+                                />
+                              </div>
+                            </div>
+
                             <div>
                               <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1.5">Correct Option Index</label>
                               <select

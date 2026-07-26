@@ -10,9 +10,10 @@ export interface Question {
   correctOptionIndex: number;
   explanation: string;
   subject?: string;
-  topic?: string; // Add topic field for MEC-UG
+  topic?: string;
   referenceYear?: string;
-  correctPercentage?: number; // Add user answer statistics percentage
+  correctPercentage?: number;
+  tags?: string[];
 }
 
 export interface QuestionSet {
@@ -211,4 +212,17 @@ export interface CanvasNode {
   color: NodeColor;
   tags: string[];
   connections: string[];
+}
+
+export interface PremiumPackage {
+  id: number;
+  name: string;
+  description: string;
+  price: number;
+  duration: number;
+  is_active: boolean;
+  is_free: boolean;
+  is_popular: boolean;
+  created_at?: string;
+  updated_at?: string;
 }

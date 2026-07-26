@@ -35,6 +35,8 @@ const proxyPrefixes = [
   "/api/admin-login",
   "/api/question-sets",
   "/api/questions",
+  "/api/premium-packages",
+  "/api/question-import",
 ];
 
 app.use(async (req, res, next) => {

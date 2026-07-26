@@ -19,6 +19,7 @@ import {
   AlertCircle
 } from "lucide-react";
 import { QuestionSet, Question } from "../../types";
+import RichTextEditor from "../RichTextEditor";
 
 
 interface EditSetOverlayProps {
@@ -159,6 +160,17 @@ export const EditSetOverlay: React.FC<EditSetOverlayProps> = ({
   // Track whether we're loading questions from DB for this set
   const [isLoadingQuestions, setIsLoadingQuestions] = useState(false);
 
+  // Ensure examType is valid against dbExams to prevent publish errors
+  React.useEffect(() => {
+    if (dbExams && dbExams.length > 0) {
+      const isValid = dbExams.some((e: any) => (e.slug || e.code || String(e.id)) === activeEditSet.examType);
+      if (!isValid) {
+        const firstExamValue = dbExams[0].slug || dbExams[0].id;
+        setActiveEditSet({ ...activeEditSet, examType: String(firstExamValue) });
+      }
+    }
+  }, [dbExams, activeEditSet.examType, activeEditSet.id]);
+
   // Lazy-load questions from DB when editing an existing set that has no questions loaded
   React.useEffect(() => {
     const isExistingSet = activeEditSet.id && !activeEditSet.id.startsWith("new-");
@@ -193,16 +205,19 @@ export const EditSetOverlay: React.FC<EditSetOverlayProps> = ({
   }, [activeEditSet.id]);
 
 
-  // Calculate unique topics from the independent questions pool
+  // Calculate dynamic topics from the database based on the selected subject
   const availableTopics = useMemo(() => {
-    const topicsSet = new Set<string>();
-    independentQuestions.forEach(q => {
-      if (q.topic && (selectedSubject === "all" || q.subject === selectedSubject)) {
-        topicsSet.add(q.topic);
-      }
-    });
-    return Array.from(topicsSet);
-  }, [independentQuestions, selectedSubject]);
+    if (!dbTopics) return [];
+    if (selectedSubject === "all") {
+      return Array.from(new Set(dbTopics.map(t => t.name)));
+    }
+    const subjectObj = dbSubjects?.find(s => s.name === selectedSubject);
+    if (!subjectObj) return [];
+    
+    // Topics have a subject_id field (UUID) that matches the subject's id/uuid
+    const filtered = dbTopics.filter(t => t.subject_id === (subjectObj.uuid || subjectObj.id));
+    return Array.from(new Set(filtered.map(t => t.name)));
+  }, [dbTopics, dbSubjects, selectedSubject]);
 
   // Filtered pool list (excluding questions already in the set, to make picking cleaner)
   const filteredPool = useMemo(() => {
@@ -310,7 +325,7 @@ export const EditSetOverlay: React.FC<EditSetOverlayProps> = ({
             sourceReference: ""
           };
 
-          const res = await fetch("/api/questions", {
+          const res = await fetch("/api/question-import", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload)
@@ -329,15 +344,17 @@ export const EditSetOverlay: React.FC<EditSetOverlayProps> = ({
               subject: dbQ.subject?.name || "",
               topic: dbQ.topic?.name || ""
             });
+          } else {
+            throw new Error(data.message || "Backend API rejected the import.");
           }
         }
 
         onSaveIndependentQuestions([...independentQuestions, ...newQs]);
         setMessage("");
         triggerNotification(`✅ Successfully imported ${importedCount} out of ${parsed.length} questions to the global pool!`);
-      } catch (err) {
+      } catch (err: any) {
         setMessage("");
-        alert("Error parsing CSV file or saving to database.");
+        alert(`Failed to import questions: ${err.message || "Error parsing CSV file or saving to database."}`);
       }
     };
     reader.readAsText(file);
@@ -467,7 +484,7 @@ export const EditSetOverlay: React.FC<EditSetOverlayProps> = ({
         });
       } else {
         // Creating a new question
-        res = await fetch("/api/questions", {
+        res = await fetch("/api/question-import", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload)
@@ -1174,11 +1191,10 @@ export const EditSetOverlay: React.FC<EditSetOverlayProps> = ({
 
                 <div className="sm:col-span-2">
                   <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Explanation</label>
-                  <textarea
-                    value={questionForm.explanation}
-                    onChange={(e) => setQuestionForm({ ...questionForm, explanation: e.target.value })}
+                  <RichTextEditor
+                    value={questionForm.explanation || ""}
+                    onChange={(val) => setQuestionForm({ ...questionForm, explanation: val })}
                     placeholder="Enter detailed clinical rationale..."
-                    className="w-full bg-slate-955 border border-slate-800 rounded-xl py-2 px-3 text-white focus:outline-none h-20 resize-y font-sans"
                   />
                 </div>
               </div>
@@ -1206,13 +1222,21 @@ export const EditSetOverlay: React.FC<EditSetOverlayProps> = ({
 
                 <div>
                   <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Topic Tag</label>
-                  <input
-                    type="text"
+                  <select
                     value={questionForm.topic}
                     onChange={(e) => setQuestionForm({ ...questionForm, topic: e.target.value })}
-                    placeholder="e.g. Thermodynamics"
-                    className="w-full bg-slate-955 border border-slate-800 rounded-xl py-2 px-3 text-white focus:outline-none"
-                  />
+                    className="w-full bg-slate-955 border border-slate-800 rounded-xl py-2 px-2 text-white focus:outline-none"
+                  >
+                    <option value="">-- Choose Topic --</option>
+                    {(() => {
+                      const subjectObj = dbSubjects?.find(s => s.name === questionForm.subject);
+                      if (!subjectObj || !dbTopics) return <option value="" disabled>Select a subject first</option>;
+                      const filteredTopics = dbTopics.filter(t => t.subject_id === (subjectObj.uuid || subjectObj.id));
+                      return Array.from(new Set(filteredTopics.map(t => t.name))).map(topicName => (
+                        <option key={topicName} value={topicName as string}>{topicName as string}</option>
+                      ));
+                    })()}
+                  </select>
                 </div>
               </div>
             </div>

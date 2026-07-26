@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Plus, AlertCircle, Edit3, Trash2, X } from "lucide-react";
+import React, { useState, useMemo } from "react";
+import { Plus, AlertCircle, Edit3, Trash2, X, Search, Filter, RefreshCw } from "lucide-react";
 
 interface SubjectsTabProps {
   dbSubjects: any[];
@@ -23,15 +23,40 @@ export const SubjectsTab: React.FC<SubjectsTabProps> = ({
   const [editingSubject, setEditingSubject] = useState<any | null>(null);
   const [subjectForm, setSubjectForm] = useState({ name: "", exam_id: "", weight: "0", icon: "book", status: "active" });
 
+  // Filter States
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterExamId, setFilterExamId] = useState("all");
+  const [filterStatus, setFilterStatus] = useState("all");
+
   // Expanded Subject Topics State
   const [expandedSubjectUuid, setExpandedSubjectUuid] = useState<string | null>(null);
   const [localTopics, setLocalTopics] = useState<any[]>([]);
+
+  // Filtered subjects logic
+  const filteredSubjects = useMemo(() => {
+    return dbSubjects.filter((sub) => {
+      // Search Query Match (Name or Slug)
+      const matchesSearch =
+        sub.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        sub.slug?.toLowerCase().includes(searchQuery.toLowerCase());
+
+      // Exam Filter Match
+      const matchesExam =
+        filterExamId === "all" || String(sub.exam_id) === String(filterExamId);
+
+      // Status Filter Match
+      const matchesStatus =
+        filterStatus === "all" || (sub.status || "active") === filterStatus;
+
+      return matchesSearch && matchesExam && matchesStatus;
+    });
+  }, [dbSubjects, searchQuery, filterExamId, filterStatus]);
 
   const handleSubjectSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!subjectForm.name.trim()) return;
 
-    // Generate a unique 10-char code using subject name and random string to satisfy unique constraints
+    // Generate a unique 10-char code using subject name and random string
     const randSuffix = Math.floor(Math.random() * 100000).toString();
     const cleanPrefix = subjectForm.name.toLowerCase().replace(/[^a-z]/g, "").slice(0, 5);
     const uniqueCode = (cleanPrefix + randSuffix).slice(0, 10);
@@ -192,9 +217,16 @@ export const SubjectsTab: React.FC<SubjectsTabProps> = ({
     }
   };
 
+  const handleResetFilters = () => {
+    setSearchQuery("");
+    setFilterExamId("all");
+    setFilterStatus("all");
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in duration-200 font-sans">
-      <div className="flex justify-between items-center">
+      {/* Top Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h3 className="text-sm font-bold text-white uppercase tracking-wider">Course Subjects</h3>
           <p className="text-xs text-slate-400 mt-0.5">Manage subject directories linked to target board exams</p>
@@ -206,17 +238,101 @@ export const SubjectsTab: React.FC<SubjectsTabProps> = ({
             setSubjectForm({ name: "", exam_id: dbExams[0]?.id || "", weight: "0", icon: "book", status: "active" });
             setShowSubjectModal(true);
           }}
-          className="bg-violet-600 hover:bg-violet-500 text-white font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-lg shadow-violet-600/10"
+          className="bg-violet-600 hover:bg-violet-500 text-white font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-lg shadow-violet-600/10 shrink-0 self-start sm:self-auto"
         >
           <Plus className="w-4 h-4" />
           <span>Add Subject</span>
         </button>
       </div>
 
+      {/* FILTER & SEARCH BAR */}
+      <div className="bg-slate-900 border border-slate-800 p-3.5 rounded-2xl flex flex-col md:flex-row items-center gap-3 justify-between">
+        <div className="flex flex-col md:flex-row items-center gap-3 w-full">
+          {/* Search Input */}
+          <div className="relative w-full md:w-72">
+            <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search subject or slug..."
+              className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-8 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-violet-500 transition-colors font-sans"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
+          {/* Exam Filter Dropdown */}
+          <div className="relative w-full md:w-56">
+            <select
+              value={filterExamId}
+              onChange={(e) => setFilterExamId(e.target.value)}
+              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-violet-500 cursor-pointer font-sans appearance-none"
+            >
+              <option value="all">All Board Exams</option>
+              {dbExams.map((exam) => (
+                <option key={exam.id} value={exam.id}>
+                  {exam.name}
+                </option>
+              ))}
+            </select>
+            <Filter className="w-3.5 h-3.5 text-slate-500 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          </div>
+
+          {/* Status Filter Dropdown */}
+          <div className="relative w-full md:w-40">
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-violet-500 cursor-pointer font-sans appearance-none"
+            >
+              <option value="all">All Statuses</option>
+              <option value="active">Active Only</option>
+              <option value="inactive">Inactive Only</option>
+            </select>
+            <Filter className="w-3.5 h-3.5 text-slate-500 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          </div>
+
+          {/* Reset Filters Button */}
+          {(searchQuery || filterExamId !== "all" || filterStatus !== "all") && (
+            <button
+              onClick={handleResetFilters}
+              className="text-xs text-violet-400 hover:text-violet-300 font-bold flex items-center gap-1 transition-colors px-2 py-1 shrink-0 cursor-pointer"
+              title="Reset Filters"
+            >
+              <RefreshCw className="w-3 h-3" />
+              <span>Reset</span>
+            </button>
+          )}
+        </div>
+
+        {/* Counter Badge */}
+        <div className="text-[11px] font-semibold text-slate-400 shrink-0 self-end md:self-center font-mono">
+          Showing <span className="text-violet-400 font-bold">{filteredSubjects.length}</span> of {dbSubjects.length}
+        </div>
+      </div>
+
       {dbSubjects.length === 0 ? (
         <div className="bg-slate-900 border border-slate-800 border-dashed p-10 rounded-2xl text-center space-y-2">
           <AlertCircle className="w-8 h-8 text-slate-500 mx-auto" />
           <p className="text-xs text-slate-400">No subjects created in database.</p>
+        </div>
+      ) : filteredSubjects.length === 0 ? (
+        <div className="bg-slate-900 border border-slate-800 p-10 rounded-2xl text-center space-y-3">
+          <Search className="w-8 h-8 text-slate-500 mx-auto" />
+          <p className="text-xs text-slate-400">No subjects match your selected filters or search query.</p>
+          <button
+            onClick={handleResetFilters}
+            className="text-xs text-violet-400 hover:underline font-bold"
+          >
+            Clear Filters
+          </button>
         </div>
       ) : (
         <div className="bg-slate-900 border border-slate-800/80 rounded-2xl overflow-hidden shadow-lg overflow-x-auto">
@@ -232,7 +348,7 @@ export const SubjectsTab: React.FC<SubjectsTabProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60 text-xs">
-              {dbSubjects.map((sub) => {
+              {filteredSubjects.map((sub) => {
                 const connectedExam = dbExams.find(e => e.id === sub.exam_id);
                 const subjectTopics = dbTopics.filter(t => t.subject_id === sub.uuid);
                 const isExpanded = expandedSubjectUuid === sub.uuid;

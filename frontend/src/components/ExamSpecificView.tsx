@@ -55,6 +55,17 @@ export default function ExamSpecificView({
   const [targetPurchaseName, setTargetPurchaseName] = useState<string>("");
   const [selectedGateway, setSelectedGateway] = useState<"esewa" | "khalti" | "imepay">("esewa");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [premiumPackages, setPremiumPackages] = useState<any[]>([]);
+
+  React.useEffect(() => {
+    fetch("/api/premium-packages", { headers: { "Accept": "application/json" } })
+      .then(res => res.json())
+      .then(data => {
+        const pkgs = data.data || data || [];
+        setPremiumPackages(pkgs.filter((p: any) => p.is_active));
+      })
+      .catch(err => console.error("Failed to fetch premium packages:", err));
+  }, []);
 
   // Filter sets for current exam
   const currentExamSets = allSets.filter(s => s.examType === targetExam);
@@ -377,101 +388,66 @@ export default function ExamSpecificView({
               );
             })}
           </div>
-        ) : (
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-12 text-center text-slate-500 text-sm">
-            <HelpCircle className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-            <p className="font-semibold text-slate-300">No question sets match your filters.</p>
-            <p className="text-slate-500 text-xs mt-1">Try changing your tab or selecting 'All Sets' above.</p>
+        ) : null}
+
+        {/* Subscription/Access Package Grid */}
+        {!hasActiveSub && premiumPackages.length > 0 && (
+          <div className="space-y-4 pt-6 border-t border-slate-800">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold text-white tracking-tight">🎯 Premium Memberships</h3>
+              <span className="text-xs text-slate-400 font-sans">Unlock all question sets, answers, and AI explanations</span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {premiumPackages.map((pkg, index) => {
+                const isPopular = !!pkg.is_popular;
+                const isFree = !!pkg.is_free;
+                const priceDisplay = isFree ? "Free" : `Rs. ${pkg.price}`;
+                
+                // Colors based on index for variety
+                const colors = [
+                  { text: "text-emerald-400", bg: "bg-emerald-500/10", border: "border-emerald-500/10", btn: "bg-slate-800 hover:bg-slate-700 text-white" },
+                  { text: "text-amber-400", bg: "bg-amber-500/10", border: "border-amber-500/10", btn: "bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-slate-950 shadow-emerald-500/10" },
+                  { text: "text-indigo-400", bg: "bg-indigo-500/10", border: "border-indigo-500/10", btn: "bg-slate-800 hover:bg-slate-700 text-white" }
+                ];
+                const theme = colors[index % colors.length];
+
+                return (
+                  <div key={pkg.id} className={`bg-slate-900/60 border ${isPopular ? 'border-2 border-emerald-500/30 shadow-lg shadow-emerald-500/5' : 'border-slate-800 hover:border-slate-700/80'} p-5 rounded-xl transition-all flex flex-col justify-between relative`}>
+                                          <h4 className="text-base font-bold text-white">{pkg.name}</h4>
+
+                    {isPopular && (
+                      <div className="absolute -top-3 right-4 bg-emerald-500 text-slate-900 text-[9px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                        Most Popular
+                      </div>
+                    )}
+                    <div>
+                      <span className={`text-[9px] font-bold uppercase tracking-wider ${theme.text} ${theme.bg} px-2 py-0.5 rounded border ${theme.border} mb-3.5 inline-block`}>
+                        {pkg.duration} Days Access
+                      </span>
+                      <p className="text-xs text-slate-400 mt-1 font-sans line-clamp-2">{pkg.description || "Comprehensive access to all prep materials."}</p>
+                    </div>
+                    <div className="mt-5">
+                      <div className="flex items-baseline gap-1 mb-3 font-mono">
+                        <span className={`text-2xl font-black ${isPopular ? 'text-emerald-400' : 'text-white'}`}>{priceDisplay}</span>
+                        {!isFree && <span className="text-slate-500 text-xs font-sans">/ {pkg.duration} Days</span>}
+                      </div>
+                      <button
+                        onClick={() => handleOpenPassPurchase(pkg.name, pkg.price, pkg.duration)}
+                        className={`w-full font-semibold py-2 px-3 rounded-lg text-xs transition-colors cursor-pointer ${theme.btn}`}
+                      >
+                        {isFree ? "Claim Free Pass" : `Unlock ${pkg.duration}-Day Pass`}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
 
       </div>
 
-      {/* Subscription/Access Package Grid (No unsolicited models, fully in scope) */}
-      {!hasActiveSub && (
-        <div className="space-y-4 pt-6 border-t border-slate-800">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-bold text-white tracking-tight">🎯 Unlimited Access Membership</h3>
-            <span className="text-xs text-slate-400 font-sans">Unlock all question sets, answers, and AI explanations</span>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            
-            {/* Plan 1 */}
-            <div className="bg-slate-900/60 border border-slate-800 hover:border-slate-700/80 p-5 rounded-xl transition-all flex flex-col justify-between relative">
-              <div>
-                <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/10 mb-3.5 inline-block">
-                  Quick Sprint
-                </span>
-                <h4 className="text-base font-bold text-white">2 Days Full Access</h4>
-                <p className="text-xs text-slate-400 mt-1 font-sans">Excellent for a quick review before exam date.</p>
-              </div>
-              <div className="mt-5">
-                <div className="flex items-baseline gap-1 mb-3">
-                  <span className="text-2xl font-black text-white font-mono">Rs. 100</span>
-                  <span className="text-slate-500 text-xs font-sans">/ 2 Days</span>
-                </div>
-                <button
-                  onClick={() => handleOpenPassPurchase("2 Days Unlimited Pass", 100, 2)}
-                  className="w-full bg-slate-800 hover:bg-slate-700 text-white font-semibold py-2 px-3 rounded-lg text-xs transition-colors cursor-pointer"
-                >
-                  Unlock 2-Day Pass
-                </button>
-              </div>
-            </div>
-
-            {/* Plan 2 */}
-            <div className="bg-slate-900 border-2 border-emerald-500/30 p-5 rounded-xl transition-all flex flex-col justify-between relative shadow-lg shadow-emerald-500/5">
-              <div className="absolute -top-3 right-4 bg-emerald-500 text-slate-900 text-[9px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-                Most Popular
-              </div>
-              <div>
-                <span className="text-[9px] font-bold uppercase tracking-wider text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/10 mb-3.5 inline-block">
-                  Weekly booster
-                </span>
-                <h4 className="text-base font-bold text-white">1 Week Unlimited</h4>
-                <p className="text-xs text-slate-400 mt-1 font-sans">Thoroughly solve all past questions with full AI explanations.</p>
-              </div>
-              <div className="mt-5">
-                <div className="flex items-baseline gap-1 mb-3 font-mono">
-                  <span className="text-2xl font-black text-emerald-400">Rs. 300</span>
-                  <span className="text-slate-500 text-xs font-sans">/ Week</span>
-                </div>
-                <button
-                  onClick={() => handleOpenPassPurchase("1 Week Unlimited Pass", 300, 7)}
-                  className="w-full bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-slate-950 font-bold py-2 px-3 rounded-lg text-xs transition-all cursor-pointer shadow-md shadow-emerald-500/10"
-                >
-                  Unlock 7-Day Pass
-                </button>
-              </div>
-            </div>
-
-            {/* Plan 3 */}
-            <div className="bg-slate-900/60 border border-slate-800 hover:border-slate-700/80 p-5 rounded-xl transition-all flex flex-col justify-between relative">
-              <div>
-                <span className="text-[9px] font-bold uppercase tracking-wider text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/10 mb-3.5 inline-block">
-                  Exam Mastery
-                </span>
-                <h4 className="text-base font-bold text-white">30 Days Unlimited</h4>
-                <p className="text-xs text-slate-400 mt-1 font-sans">Full comprehensive access with upcoming mock updates.</p>
-              </div>
-              <div className="mt-5">
-                <div className="flex items-baseline gap-1 mb-3 font-mono">
-                  <span className="text-2xl font-black text-white">Rs. 500</span>
-                  <span className="text-slate-500 text-xs font-sans">/ Month</span>
-                </div>
-                <button
-                  onClick={() => handleOpenPassPurchase("1 Month Unlimited Pass", 500, 30)}
-                  className="w-full bg-slate-800 hover:bg-slate-700 text-white font-semibold py-2 px-3 rounded-lg text-xs transition-colors cursor-pointer"
-                >
-                  Unlock 30-Day Pass
-                </button>
-              </div>
-            </div>
-
-          </div>
-        </div>
-      )}
       {showPurchaseModal && (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 relative shadow-2xl">

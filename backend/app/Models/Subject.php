@@ -19,4 +19,12 @@ class Subject extends Model
     {
         return ['uuid'];
     }
+    public function topics()
+    {
+        return $this->hasMany(Topic::class, 'subject_id', 'uuid');
+    }
+    public function exam()
+    {
+        return $this->belongsTo(Exam::class);
+    }
 }

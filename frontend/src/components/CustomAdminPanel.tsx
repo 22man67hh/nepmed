@@ -43,7 +43,9 @@ import {
   Sliders,
   LogOut,
   Sun,
-  Moon
+  Moon,
+  Package,
+  Database
 } from "lucide-react";
 import { QuestionSet, Question } from "../types";
 import { generateQuestionIdForSubject, retagAllQuestions } from "../subjectsData";
@@ -58,8 +60,10 @@ import { TopicsTab } from "./admin/TopicsTab";
 import { FlaggedIssuesTab } from "./admin/FlaggedIssuesTab";
 import { ReviewQueueTab } from "./admin/ReviewQueueTab";
 import { SubjectFoldersPoolTab } from "./admin/SubjectFoldersPoolTab";
+import { GlobalQuestionsTab } from "./admin/GlobalQuestionsTab";
 import { EditSetOverlay } from "./admin/EditSetOverlay";
 import { PapersTab } from "./admin/PapersTab";
+import { PremiumPackagesTab } from "./admin/PremiumPackagesTab";
 
 interface CustomAdminPanelProps {
   allSets: QuestionSet[];
@@ -375,15 +379,17 @@ export default function CustomAdminPanel({
     if (path === "/admin/topics") return "topics";
     if (path === "/admin/exams") return "exams";
     if (path === "/admin/questions") return "questions";
+    if (path === "/admin/global-questions") return "global-questions";
     if (path === "/admin/review") return "review";
     if (path === "/admin/reports") return "reports";
     if (path === "/admin/cms") return "cms";
+    if (path === "/admin/packages") return "packages";
     return "dashboard";
   };
 
   const adminTab = getActiveTabFromPath();
 
-  const setAdminTab = (tab: "dashboard" | "papers" | "reports" | "questions" | "review" | "cms" | "exams" | "subjects" | "topics") => {
+  const setAdminTab = (tab: "dashboard" | "papers" | "reports" | "questions" | "review" | "cms" | "exams" | "subjects" | "topics" | "packages" | string) => {
     const targetPath = tab === "papers" ? "/admin/mcq-editor" : `/admin/${tab}`;
     navigate(targetPath);
   };
@@ -1731,10 +1737,19 @@ export default function CustomAdminPanel({
               <Tag className="w-4 h-4 text-violet-400 shrink-0" />
               <span className={`${isSidebarCollapsed ? "hidden md:hidden" : "block"}`}>Topics Directory</span>
             </button>
+            <button
+              onClick={() => { setAdminTab("packages"); if (window.innerWidth < 768) setIsMobileMenuOpen(false); }}
+              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${adminTab === "packages"
+                  ? "bg-gradient-to-r from-emerald-600 to-emerald-500 text-white shadow-lg shadow-emerald-500/20"
+                  : "text-slate-400 hover:text-white hover:bg-slate-800/80"
+                }`}
+            >
+              <Package className="w-4 h-4" />
+              <span className={`${isSidebarCollapsed ? "hidden md:hidden" : "block"}`}>Premium Packages</span>
+            </button>
 
             <button
-              type="button"
-              onClick={() => { setAdminTab("papers"); setIsMobileMenuOpen(false); }}
+              onClick={() => { setAdminTab("papers"); if (window.innerWidth < 768) setIsMobileMenuOpen(false); }}
               className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${adminTab === "papers"
                 ? "bg-violet-500/15 text-violet-400 border-l-4 border-violet-500"
                 : "text-slate-400 hover:text-white hover:bg-slate-800/40"
@@ -1754,6 +1769,18 @@ export default function CustomAdminPanel({
             >
               <BookOpen className="w-4 h-4 text-violet-400 shrink-0" />
               <span className={`${isSidebarCollapsed ? "hidden md:hidden" : "block"}`}>Subject Folders Pool</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => { setAdminTab("global-questions"); setIsMobileMenuOpen(false); }}
+              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${adminTab === "global-questions"
+                ? "bg-violet-500/15 text-violet-400 border-l-4 border-violet-500"
+                : "text-slate-400 hover:text-white hover:bg-slate-800/40"
+                }`}
+            >
+              <Database className="w-4 h-4 text-violet-400 shrink-0" />
+              <span className={`${isSidebarCollapsed ? "hidden md:hidden" : "block"}`}>Global Database</span>
             </button>
 
             <button
@@ -1780,7 +1807,7 @@ export default function CustomAdminPanel({
               <span className={`${isSidebarCollapsed ? "hidden md:hidden" : "block"}`}>User Flagged Issues</span>
             </button>
 
-            <button
+            {/* <button
               type="button"
               onClick={() => { setAdminTab("cms"); setIsMobileMenuOpen(false); }}
               className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${adminTab === "cms"
@@ -1790,7 +1817,7 @@ export default function CustomAdminPanel({
             >
               <Settings className="w-4 h-4 text-violet-400 shrink-0" />
               <span className={`${isSidebarCollapsed ? "hidden md:hidden" : "block"}`}>CMS Configs</span>
-            </button>
+            </button> */}
           </nav>
         </div>
 
@@ -1845,6 +1872,7 @@ export default function CustomAdminPanel({
               {adminTab === "subjects" && "📚 Subjects Directory"}
               {adminTab === "topics" && "🏷️ Topics Directory"}
               {adminTab === "cms" && "⚙️ Visual CMS Control Room"}
+              {adminTab === "packages" && "💎 Premium Packages"}
             </h2>
           </div>
 
@@ -1948,6 +1976,10 @@ export default function CustomAdminPanel({
             )
           )}
 
+          {adminTab === "packages" && (
+            <PremiumPackagesTab setMessage={setMessage} />
+          )}
+
           {adminTab === "questions" && (
             <SubjectFoldersPoolTab
               independentQuestions={independentQuestions}
@@ -1958,6 +1990,10 @@ export default function CustomAdminPanel({
               dbSubjects={dbSubjects}
               dbTopics={dbTopics}
             />
+          )}
+
+          {adminTab === "global-questions" && (
+            <GlobalQuestionsTab dbSubjects={dbSubjects} dbTopics={dbTopics} />
           )}
 
           {adminTab === "review" && (
