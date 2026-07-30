@@ -1977,7 +1977,11 @@ export default function CustomAdminPanel({
           )}
 
           {adminTab === "packages" && (
-            <PremiumPackagesTab setMessage={setMessage} />
+            <PremiumPackagesTab 
+              setMessage={setMessage} 
+              dbExams={dbExams} 
+              allSets={allSets} 
+            />
           )}
 
           {adminTab === "questions" && (

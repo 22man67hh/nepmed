@@ -18,6 +18,7 @@ export interface Question {
 
 export interface QuestionSet {
   id: string;
+  exam_id?: number;
   title: string;
   examType: string;
   type: "past-year" | "mock-test";
@@ -57,17 +58,22 @@ export interface BookmarkedQuestion {
 }
 
 export interface UserProfile {
-  email: string;
+  id: string;
   name: string;
-  avatarUrl?: string;
+  email: string;
   isLoggedIn: boolean;
+  avatar?: string;
+  joinDate?: string;
+  subscription?: {
+    examType: string;
+    expiresAt: string;
+  };
+  activePackages?: any[];
+  bookmarkedQuestionIds?: string[];
+  avatarUrl?: string;
   age?: number | string;
   sex?: string;
   role?: string;
-  subscription?: {
-    examType: string;
-    expiresAt: string; // ISO Date or "lifetime"
-  };
   purchasedSetIds: string[]; // specific sets unlocked
   rewardPoints?: number;
   referralCode?: string;
@@ -223,6 +229,8 @@ export interface PremiumPackage {
   is_active: boolean;
   is_free: boolean;
   is_popular: boolean;
+  exams?: any[];
+  questionSets?: any[];
   created_at?: string;
   updated_at?: string;
 }

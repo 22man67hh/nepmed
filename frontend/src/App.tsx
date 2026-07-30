@@ -366,6 +366,7 @@ export default function App() {
 
             return {
               id: String(s.id),
+              exam_id: s.exam_id,
               title: s.title || "Untitled Set",
               examType: examSlug,
               type: s.type || "mock-test",
@@ -731,17 +732,55 @@ export default function App() {
     return [];
   });
 
-  const [progressList, setProgressList] = useState<UserProgress[]>(() => {
-    const saved = localStorage.getItem("nepmed_progress_list");
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        console.error("Error parsing progress list:", e);
+  const [progressList, setProgressList] = useState<UserProgress[]>([]);
+
+  useEffect(() => {
+    const fetchUserProfileAndHistory = async () => {
+      if (userProfile.isLoggedIn) {
+        try {
+          const token = localStorage.getItem("nepmed_auth_token");
+          
+          // Fetch freshest user profile (syncs activePackages)
+          const meRes = await fetch("/api/me", {
+            headers: {
+              "Accept": "application/json",
+              "Authorization": `Bearer ${token}`
+            }
+          });
+          if (meRes.ok) {
+            const meData = await meRes.json();
+            if (meData.user) {
+              setUserProfile(prev => {
+                const updated = {
+                  ...prev,
+                  activePackages: meData.user.active_packages || meData.user.activePackages || []
+                };
+                localStorage.setItem("nepmed_user_profile", JSON.stringify(updated));
+                return updated;
+              });
+            }
+          }
+
+          // Fetch History
+          const res = await fetch("/api/my-history", {
+            headers: {
+              "Accept": "application/json",
+              "Authorization": `Bearer ${token}`
+            }
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.data) {
+              setProgressList(data.data);
+            }
+          }
+        } catch (err) {
+          console.error("Failed to fetch history:", err);
+        }
       }
-    }
-    return [];
-  });
+    };
+    fetchUserProfileAndHistory();
+  }, [userProfile.isLoggedIn]);
 
   const [bookmarks, setBookmarks] = useState<BookmarkedQuestion[]>(() => {
     const saved = localStorage.getItem("nepmed_bookmarks");
@@ -810,6 +849,18 @@ export default function App() {
       }
     } else {
       const screen = path.replace("/", "");
+      
+      if (screen === "payment-success") {
+        alert("Payment Authorized Successfully! Your account has been upgraded to Premium.");
+        navigate("/dashboard");
+        return;
+      }
+      if (screen === "payment-failed") {
+        alert("Payment Failed or Cancelled. Please try again.");
+        navigate("/subscription");
+        return;
+      }
+
       const validScreens = [
         "dashboard", "bookmarks", "history", "leaderboard", 
         "forum", "about", "practice", "set_practice", "subscription", "refer_earn"
@@ -916,7 +967,7 @@ export default function App() {
   }, [cmsContent]);
 
   useEffect(() => {
-    localStorage.setItem("nepmed_progress_list", JSON.stringify(progressList));
+    // We no longer sync progressList to localStorage since it's fetched from backend.
   }, [progressList]);
 
   useEffect(() => {
@@ -1377,7 +1428,7 @@ export default function App() {
 
   // If user is not logged in, force Login screen
   if (!userProfile.isLoggedIn) {
-    return <LoginScreen onLoginSuccess={handleLoginSuccess} cmsContent={cmsContent} />;
+    return <LoginScreen onLoginSuccess={handleLoginSuccess} cmsContent={cmsContent} dbExams={dbExams} />;
   }
 
   return (

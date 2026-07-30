@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { 
   Trophy, 
   Medal, 
@@ -44,52 +44,53 @@ export default function LeaderboardView({
   onNavigateToDashboard,
   cmsContent
 }: LeaderboardViewProps) {
-  // Competitor data is fully customizable from Admin Control Panel
-  const mockCompetitors = useMemo<LeaderboardEntry[]>(() => {
-    const raw = cmsContent.leaderboardConfig?.competitors || [
-      { name: "Dr. Sandeep Adhikari", avatarUrl: "https://api.dicebear.com/7.x/adventurer/svg?seed=Sandeep", totalCorrect: 285, testsCompleted: 15, accuracy: 92, city: "Kathmandu" },
-      { name: "Pooja Shrestha", avatarUrl: "https://api.dicebear.com/7.x/adventurer/svg?seed=Pooja", totalCorrect: 242, testsCompleted: 13, accuracy: 88, city: "Lalitpur" },
-      { name: "Sushant Thapa", avatarUrl: "https://api.dicebear.com/7.x/adventurer/svg?seed=Sushant", totalCorrect: 215, testsCompleted: 11, accuracy: 86, city: "Pokhara" },
-      { name: "Aayushma Bhandari", avatarUrl: "https://api.dicebear.com/7.x/adventurer/svg?seed=Aayushma", totalCorrect: 198, testsCompleted: 12, accuracy: 81, city: "Biratnagar" },
-      { name: "Dr. Ramesh Kushwaha", avatarUrl: "https://api.dicebear.com/7.x/adventurer/svg?seed=Ramesh", totalCorrect: 184, testsCompleted: 10, accuracy: 84, city: "Janakpur" },
-      { name: "Niranjan Chaudhary", avatarUrl: "https://api.dicebear.com/7.x/adventurer/svg?seed=Niranjan", totalCorrect: 172, testsCompleted: 9, accuracy: 79, city: "Butwal" },
-      { name: "Samikshya Devkota", avatarUrl: "https://api.dicebear.com/7.x/adventurer/svg?seed=Samikshya", totalCorrect: 158, testsCompleted: 8, accuracy: 82, city: "Chitwan" },
-    ];
-    return raw.filter((comp: any) => comp.enabled !== false);
-  }, [cmsContent]);
+  // No mock data allowed, strictly DB-driven.
+  const [realCompetitors, setRealCompetitors] = useState<LeaderboardEntry[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch actual leaderboard data from the backend
+  useEffect(() => {
+    const fetchLeaderboard = async () => {
+      try {
+        const token = localStorage.getItem("nepmed_auth_token");
+        const headers: HeadersInit = { "Accept": "application/json" };
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+
+        const response = await fetch("/api/leaderboard", { headers });
+        if (response.ok) {
+          const json = await response.json();
+          // Map backend data to LeaderboardEntry format
+          const mapped: LeaderboardEntry[] = json.data.map((user: any) => {
+            const acc = user.total_attempted > 0 
+              ? Math.round((Number(user.correct_answers) / Number(user.total_attempted)) * 100) 
+              : 0;
+            
+            return {
+              id: user.id,
+              name: user.name,
+              avatarUrl: `https://api.dicebear.com/7.x/adventurer/svg?seed=${user.name}`,
+              totalCorrect: Number(user.correct_answers),
+              testsCompleted: Number(user.total_attempted), // Show total questions attempted here
+              accuracy: acc,
+              city: "Nepal",
+              isCurrentUser: userProfile.email === user.email // Highlight if it's the logged-in user
+            };
+          });
+          setRealCompetitors(mapped);
+        }
+      } catch (err) {
+        console.error("Failed to fetch leaderboard:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchLeaderboard();
+  }, [userProfile.email]);
 
   const mergedLeaderboard = useMemo(() => {
-    // Calculate current user stats from their progress history
-    const userTestsCount = progressList.length;
-    const userTotalCorrect = progressList.reduce((sum, p) => sum + p.correctAnswersCount, 0);
-    const userTotalQuestions = progressList.reduce((sum, p) => sum + p.totalQuestions, 0);
-    const userAvgAccuracy = userTotalQuestions > 0 ? Math.round((userTotalCorrect / userTotalQuestions) * 100) : 0;
-
-    const currentUserEntry: LeaderboardEntry = {
-      name: userProfile.name || "You (Candidate)",
-      avatarUrl: userProfile.avatarUrl || "https://api.dicebear.com/7.x/adventurer/svg?seed=nepmed",
-      totalCorrect: userTotalCorrect,
-      testsCompleted: userTestsCount,
-      accuracy: userAvgAccuracy,
-      isCurrentUser: true,
-      city: "Nepal (Simulator)"
-    };
-
-    // Merge & Sort by totalCorrect, then by accuracy
-    const allEntries = [...mockCompetitors, currentUserEntry];
-    allEntries.sort((a, b) => {
-      if (b.totalCorrect !== a.totalCorrect) {
-        return b.totalCorrect - a.totalCorrect;
-      }
-      return b.accuracy - a.accuracy;
-    });
-
-    // Assign rank
-    return allEntries.map((entry, idx) => ({
-      ...entry,
-      rank: idx + 1
-    }));
-  }, [progressList, userProfile, mockCompetitors]);
+    // Strictly DB driven - no fallback mock data
+    return realCompetitors.map((entry, idx) => ({ ...entry, rank: idx + 1 }));
+  }, [realCompetitors]);
 
   // Extract top 3 for the podium
   const podium = useMemo(() => {
@@ -109,6 +110,15 @@ export default function LeaderboardView({
   const currentUserRankInfo = useMemo(() => {
     return mergedLeaderboard.find(e => e.isCurrentUser);
   }, [mergedLeaderboard]);
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-96 space-y-4">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-400"></div>
+        <p className="text-slate-400 text-sm font-semibold animate-pulse">Syncing Leaderboard from DB...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 max-w-5xl mx-auto p-4 lg:p-6 text-slate-100">
@@ -273,8 +283,8 @@ export default function LeaderboardView({
               {/* Statistics */}
               <div className="flex items-center gap-6 shrink-0 text-right">
                 <div>
-                  <p className="text-xs text-slate-500 font-mono">Completed</p>
-                  <p className="text-xs font-bold text-slate-300">{candidate.testsCompleted} Tests</p>
+                  <p className="text-xs text-slate-500 font-mono">Questions Attempted</p>
+                  <p className="text-xs font-bold text-slate-300">{candidate.testsCompleted} Qs</p>
                 </div>
                 <div>
                   <p className="text-xs text-slate-500 font-mono">Accuracy</p>

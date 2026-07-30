@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   CreditCard, 
   CheckCircle2, 
@@ -14,7 +14,7 @@ import {
   Gift,
   HelpCircle
 } from "lucide-react";
-import { UserProfile, CMSContent } from "../types";
+import { UserProfile, CMSContent, PremiumPackage } from "../types";
 
 interface SubscriptionViewProps {
   userProfile: UserProfile;
@@ -38,23 +38,36 @@ export default function SubscriptionView({
       "Premium 24/7 Gemini Medical AI Tutor access",
       "Detailed progress graphs and exam preparation reports"
     ],
-    promoBanner: "🎉 SPECIAL OFFER: 15% discount applied automatically on checkout!",
+    promoBanner: "",
     paymentMethods: [
-      { name: "eSewa Pay", logo: "🟢", description: "Instant activation via standard Nepal eSewa wallet connection." },
       { name: "Khalti Wallet", logo: "🟣", description: "Fast billing using Khalti OTP verification API." },
-      { name: "Nepal Fonepay", logo: "🔴", description: "Scan-to-Pay QR code secure terminal access." }
     ]
   };
 
-  const plans = cmsContent.subscriptionPlans || [
-    { id: "pass-2", days: 2, tag: "Quick Review", title: "2 Days Full Access", description: "Excellent for a quick review before exam date.", price: 100 },
-    { id: "pass-7", days: 7, tag: "Weekly Booster", title: "1 Week Unlimited", description: "Thoroughly solve all past questions with full AI explanations.", price: 300 },
-    { id: "pass-30", days: 30, tag: "Exam Mastery", title: "30 Days Unlimited", description: "Full comprehensive access with upcoming mock updates.", price: 500 }
-  ];
+  // States for DB packages
+  const [dbPackages, setDbPackages] = useState<PremiumPackage[]>([]);
+  const [isLoadingPackages, setIsLoadingPackages] = useState(true);
+
+  useEffect(() => {
+    const fetchPackages = async () => {
+      try {
+        const res = await fetch("/api/premium-packages");
+        if (res.ok) {
+          const data = await res.json();
+          setDbPackages(Array.isArray(data) ? data : data.data || []);
+        }
+      } catch (err) {
+        console.error("Failed to fetch premium packages", err);
+      } finally {
+        setIsLoadingPackages(false);
+      }
+    };
+    fetchPackages();
+  }, []);
 
   // States
-  const [selectedPlanId, setSelectedPlanId] = useState<string>(plans[0]?.id || "");
-  const [selectedGateway, setSelectedGateway] = useState<string>(subConfig.paymentMethods[0]?.name || "");
+  const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
+  const [selectedGateway, setSelectedGateway] = useState<string>("Khalti Wallet");
   const [promoCode, setPromoCode] = useState("");
   const [appliedPromo, setAppliedPromo] = useState<string | null>(null);
   const [promoDiscount, setPromoDiscount] = useState(0); // decimal percentage, e.g. 0.15 for 15%
@@ -67,7 +80,7 @@ export default function SubscriptionView({
   const [paymentStep, setPaymentStep] = useState<"form" | "loading" | "success">("form");
   const [loadingText, setLoadingText] = useState("");
 
-  const activePlan = plans.find(p => p.id === selectedPlanId) || plans[0];
+  const activePlan = dbPackages.find(p => p.id === selectedPlanId);
 
   // Apply promo logic
   const handleApplyPromo = (e: React.FormEvent) => {
@@ -107,42 +120,73 @@ export default function SubscriptionView({
   };
 
   // Submit Simulated Payment
-  const handleConfirmPayment = (e: React.FormEvent) => {
+  const handleConfirmPayment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (selectedGateway !== "Nepal Fonepay" && !walletPhone) {
-      alert("Please enter your wallet mobile number.");
-      return;
-    }
+    if (!activePlan) return;
 
-    setPaymentStep("loading");
-    setLoadingText("Initiating secure gateway handshaking...");
+    if (selectedGateway === "Khalti Wallet") {
+      setPaymentStep("loading");
+      setLoadingText("Initializing Secure Khalti Gateway...");
 
-    setTimeout(() => {
-      setLoadingText("Verifying token balance & credentials...");
+      try {
+        const token = localStorage.getItem("nepmed_auth_token");
+        const res = await fetch("/api/payment/khalti/initiate", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify({ package_id: activePlan.id })
+        });
+
+        const json = await res.json();
+        
+        if (json.status && json.payment_url) {
+          setLoadingText("Redirecting to Khalti...");
+          // Redirect the browser entirely to Khalti
+          window.location.href = json.payment_url;
+        } else {
+          alert("Failed to initiate Khalti payment: " + (json.message || "Unknown error"));
+          setPaymentStep("form");
+        }
+      } catch (err) {
+        console.error(err);
+        alert("Network error while communicating with Khalti server.");
+        setPaymentStep("form");
+      }
+    } else {
+      // Simulate other gateways like eSewa or Fonepay for now
+      setPaymentStep("loading");
+      setLoadingText("Initiating secure gateway handshaking...");
+
       setTimeout(() => {
-        setLoadingText("Writing purchase ledger entries securely...");
+        setLoadingText("Verifying token balance & credentials...");
         setTimeout(() => {
-          // Success! Upgrade user profile in state & localStorage
-          const expiresDate = new Date();
-          const daysToAdd = activePlan ? activePlan.days : 30;
-          expiresDate.setDate(expiresDate.getDate() + daysToAdd);
+          setLoadingText("Writing purchase ledger entries securely...");
+          setTimeout(() => {
+            // Success! Upgrade user profile in state & localStorage
+            const expiresDate = new Date();
+            const daysToAdd = activePlan ? activePlan.duration || 30 : 30;
+            expiresDate.setDate(expiresDate.getDate() + daysToAdd);
 
-          setUserProfile(prev => {
-            const updated = {
-              ...prev,
-              subscription: {
-                examType: "All Premium Modules",
-                expiresAt: expiresDate.toISOString()
-              }
-            };
-            localStorage.setItem("nepmed_user_profile", JSON.stringify(updated));
-            return updated;
-          });
+            setUserProfile(prev => {
+              const updated = {
+                ...prev,
+                subscription: {
+                  examType: activePlan?.name || "Premium Module",
+                  expiresAt: expiresDate.toISOString()
+                }
+              };
+              localStorage.setItem("nepmed_user_profile", JSON.stringify(updated));
+              return updated;
+            });
 
-          setPaymentStep("success");
+            setPaymentStep("success");
+          }, 1500);
         }, 1500);
-      }, 1500);
-    }, 1200);
+      }, 1200);
+    }
   };
 
   return (
@@ -210,7 +254,15 @@ export default function SubscriptionView({
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {plans.map((plan) => {
+            {isLoadingPackages ? (
+              <div className="col-span-3 text-center text-slate-400 py-12 animate-pulse">
+                Loading database packages...
+              </div>
+            ) : dbPackages.length === 0 ? (
+              <div className="col-span-3 text-center text-slate-400 py-12">
+                No premium packages available right now.
+              </div>
+            ) : dbPackages.map((plan) => {
               const isSelected = selectedPlanId === plan.id;
               return (
                 <button
@@ -223,14 +275,12 @@ export default function SubscriptionView({
                   }`}
                   style={{ backgroundColor: "#ccdce7" }}
                 >
-                  {plan.tag && (
-                    <span className="absolute top-3 right-3 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-950/10 text-slate-900 border border-slate-950/25">
-                      {plan.tag}
-                    </span>
-                  )}
+                  <span className="absolute top-3 right-3 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-950/10 text-slate-900 border border-slate-950/25">
+                    {plan.duration ? `${plan.duration} Days` : "Unlimited"}
+                  </span>
                   
                   <div className="space-y-1 mt-1">
-                    <h3 className="text-sm font-bold pr-12 text-slate-950">{plan.title}</h3>
+                    <h3 className="text-sm font-bold pr-12 text-slate-950">{plan.name}</h3>
                     <p className="text-[11px] leading-normal pr-4 text-slate-700">{plan.description}</p>
                   </div>
 
@@ -239,13 +289,19 @@ export default function SubscriptionView({
                       <span className="text-[10px] block uppercase font-bold tracking-wider text-slate-600">Price</span>
                       <span className="text-lg font-extrabold text-slate-950">NPR {plan.price}</span>
                     </div>
-                    <div className={`w-6 h-6 rounded-full border flex items-center justify-center transition-all ${
-                      isSelected 
-                        ? "border-slate-950 bg-slate-950 text-white" 
-                        : "border-slate-400"
-                    }`}>
-                      {isSelected && <CheckCircle2 className="w-4 h-4" />}
-                    </div>
+                    {userProfile.activePackages?.some((ap: any) => ap.id === plan.id) ? (
+                      <span className="text-[10px] font-bold uppercase bg-emerald-500 text-white px-3 py-1 rounded-full">
+                        Subscribed
+                      </span>
+                    ) : (
+                      <div className={`w-6 h-6 rounded-full border flex items-center justify-center transition-all ${
+                        isSelected 
+                          ? "border-slate-950 bg-slate-950 text-white" 
+                          : "border-slate-400"
+                      }`}>
+                        {isSelected && <CheckCircle2 className="w-4 h-4" />}
+                      </div>
+                    )}
                   </div>
                 </button>
               );
@@ -279,7 +335,7 @@ export default function SubscriptionView({
             <div className="bg-slate-950/50 p-4 rounded-xl space-y-2">
               <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block">Selected Plan</span>
               <div className="flex justify-between items-center">
-                <span className="text-xs font-bold text-white">{activePlan?.title || "Select a package"}</span>
+                <span className="text-xs font-bold text-white">{activePlan?.name || "Select a package"}</span>
                 <span className="text-xs font-black text-amber-400">NPR {originalPrice}</span>
               </div>
               
@@ -297,7 +353,7 @@ export default function SubscriptionView({
             </div>
 
             {/* Promo code form */}
-            <form onSubmit={handleApplyPromo} className="space-y-2">
+            {/* <form onSubmit={handleApplyPromo} className="space-y-2">
               <label className="block text-[10px] font-black uppercase text-slate-400 tracking-wider">Promo / Coupon Code</label>
               <div className="flex gap-2">
                 <input
@@ -320,7 +376,7 @@ export default function SubscriptionView({
                   <Percent className="w-3 h-3" /> Successfully Applied! ({Math.round(promoDiscount * 100)}% Discount)
                 </p>
               )}
-            </form>
+            </form> */}
 
             {/* Payment Method Selector */}
             <div className="space-y-2.5">
@@ -395,7 +451,7 @@ export default function SubscriptionView({
                   <div className="bg-slate-950 p-4 rounded-xl flex justify-between items-center">
                     <div>
                       <h4 className="text-xs font-bold text-slate-400">Total Bill Amount</h4>
-                      <p className="text-[10px] text-slate-500 mt-0.5">Package: {activePlan?.title}</p>
+                      <p className="text-[10px] text-slate-500 mt-0.5">Package: {activePlan?.name}</p>
                     </div>
                     <span className="text-lg font-black text-amber-400">NPR {finalPrice}</span>
                   </div>
@@ -489,7 +545,7 @@ export default function SubscriptionView({
                     <div className="flex justify-between text-[11px] text-slate-400">
                       <span>Expires On:</span>
                       <span className="font-semibold text-emerald-400">
-                        {new Date(new Date().setDate(new Date().getDate() + (activePlan?.days || 30))).toLocaleDateString()}
+                        {new Date(new Date().setDate(new Date().getDate() + (activePlan?.duration || 30))).toLocaleDateString()}
                       </span>
                     </div>
                   </div>

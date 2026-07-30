@@ -268,6 +268,33 @@ export default function PracticeSession({
     if (sessionMode === "tutor") {
       setRevealedTutorAnswers(prev => ({ ...prev, [qId]: true }));
     }
+
+    // Asynchronously record the attempt in the backend
+    try {
+      const token = localStorage.getItem("nepmed_auth_token");
+      if (token) {
+        // Resolve if we are in a specific Question Set
+        const questionSetId = set?.id && !set.id.startsWith("mock-") && !set.id.startsWith("dummy") ? set.id : null;
+        
+        // Fire and forget API call
+        fetch("/api/question-attempts", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+            "Accept": "application/json"
+          },
+          body: JSON.stringify({
+            question_id: qId,
+            question_set_id: questionSetId,
+            selected_option_index: optIdx,
+            time_taken_seconds: 0 // In the future, this can use a local timer diff
+          })
+        }).catch(err => console.error("Failed to sync attempt to DB:", err));
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const handleNext = () => {

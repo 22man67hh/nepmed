@@ -120,8 +120,9 @@ class LoginController extends Controller
 
     public function me(Request $request)
     {
+        $user = $request->user()->load('activePackages');
         return response()->json([
-            'user' => $request->user(),
+            'user' => $user,
             'status' => true
         ]);
     }

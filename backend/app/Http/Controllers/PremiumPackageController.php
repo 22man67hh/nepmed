@@ -13,11 +13,9 @@ class PremiumPackageController extends Controller
     public function index(Request $request)
     {
         $search=$request->search;
-        $packages=PremiumPackages::query();
-        if($search){
-            $packages->where('name','like','%'.$search.'%');
-        }
-        $packages=$packages->get();
+        $packages = PremiumPackages::with(['exams', 'questionSets'])->when($search, function ($query, $search) {
+            return $query->where('name', 'like', '%' . $search . '%');
+        })->get();
         return response()->json($packages);
 
     }
@@ -44,8 +42,18 @@ class PremiumPackageController extends Controller
           'is_free' => 'required|boolean',
           'is_popular' => 'required|boolean'
         ]);
-        $data=$request->all();
+        $data=$request->except(['exams', 'question_sets', 'questionSets']);
         $package=PremiumPackages::create($data);
+        
+        if ($request->has('exams')) {
+            $package->exams()->sync($request->exams);
+        }
+        if ($request->has('question_sets')) {
+            $package->questionSets()->sync($request->question_sets);
+        }
+
+        $package->load(['exams', 'questionSets']);
+
         return response()->json([
             'status'=>true,
             'message'=>'Package created successfully',
@@ -84,8 +92,18 @@ class PremiumPackageController extends Controller
           'is_free' => 'required|boolean',
           'is_popular' => 'required|boolean'
         ]);
-        $data=$request->all();
-        $package=$package->update($data);
+        $data=$request->except(['exams', 'question_sets', 'questionSets']);
+        $package->update($data);
+
+        if ($request->has('exams')) {
+            $package->exams()->sync($request->exams);
+        }
+        if ($request->has('question_sets')) {
+            $package->questionSets()->sync($request->question_sets);
+        }
+
+        $package->load(['exams', 'questionSets']);
+
         return response()->json([
             'status'=>true,
             'message'=>'Package updated successfully',

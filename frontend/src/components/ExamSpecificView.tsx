@@ -145,12 +145,33 @@ export default function ExamSpecificView({
     setShowPurchaseModal(true);
   };
 
-  const handleOpenPassPurchase = (name: string, price: number, days: number) => {
-    setPurchaseType("pass");
-    setTargetPurchaseId(`${days}-days`);
-    setTargetPurchasePrice(price);
-    setTargetPurchaseName(name);
-    setShowPurchaseModal(true);
+  const handleOpenPassPurchase = async (pkgId: string) => {
+    setIsProcessing(true);
+    try {
+      const token = localStorage.getItem("nepmed_auth_token");
+      const res = await fetch("/api/payment/khalti/initiate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ package_id: pkgId })
+      });
+
+      const json = await res.json();
+      
+      if (json.status && json.payment_url) {
+        window.location.href = json.payment_url;
+      } else {
+        alert("Failed to initiate Khalti payment: " + (json.message || "Unknown error"));
+        setIsProcessing(false);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Network error while communicating with Khalti server.");
+      setIsProcessing(false);
+    }
   };
 
   const handleConfirmPurchase = () => {
@@ -432,12 +453,19 @@ export default function ExamSpecificView({
                         <span className={`text-2xl font-black ${isPopular ? 'text-emerald-400' : 'text-white'}`}>{priceDisplay}</span>
                         {!isFree && <span className="text-slate-500 text-xs font-sans">/ {pkg.duration} Days</span>}
                       </div>
-                      <button
-                        onClick={() => handleOpenPassPurchase(pkg.name, pkg.price, pkg.duration)}
-                        className={`w-full font-semibold py-2 px-3 rounded-lg text-xs transition-colors cursor-pointer ${theme.btn}`}
-                      >
-                        {isFree ? "Claim Free Pass" : `Unlock ${pkg.duration}-Day Pass`}
-                      </button>
+                      {userProfile.activePackages?.some((ap: any) => ap.id === pkg.id) ? (
+                        <div className="w-full font-bold uppercase tracking-widest text-center py-2 px-3 rounded-lg text-xs bg-emerald-500 text-white cursor-default">
+                          Subscribed
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => handleOpenPassPurchase(pkg.id)}
+                          disabled={isProcessing}
+                          className={`w-full font-semibold py-2 px-3 rounded-lg text-xs transition-colors cursor-pointer ${theme.btn} ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        >
+                          {isProcessing ? "Processing..." : isFree ? "Claim Free Pass" : `Unlock ${pkg.duration}-Day Pass`}
+                        </button>
+                      )}
                     </div>
                   </div>
                 );
@@ -490,7 +518,7 @@ export default function ExamSpecificView({
               <div className="grid grid-cols-3 gap-2">
                 
                 {/* eSewa */}
-                <button
+                {/* <button
                   onClick={() => setSelectedGateway("esewa")}
                   className={`border p-3 rounded-xl flex flex-col items-center justify-center gap-1.5 cursor-pointer transition-all ${
                     selectedGateway === "esewa" 
@@ -502,7 +530,7 @@ export default function ExamSpecificView({
                     e
                   </div>
                   <span className="text-[10px] font-bold">eSewa Pay</span>
-                </button>
+                </button> */}
 
                 {/* Khalti */}
                 <button
@@ -520,7 +548,7 @@ export default function ExamSpecificView({
                 </button>
 
                 {/* IME Pay */}
-                <button
+                {/* <button
                   onClick={() => setSelectedGateway("imepay")}
                   className={`border p-3 rounded-xl flex flex-col items-center justify-center gap-1.5 cursor-pointer transition-all ${
                     selectedGateway === "imepay" 
@@ -532,7 +560,7 @@ export default function ExamSpecificView({
                     i
                   </div>
                   <span className="text-[10px] font-bold">IME Pay</span>
-                </button>
+                </button> */}
 
               </div>
             </div>

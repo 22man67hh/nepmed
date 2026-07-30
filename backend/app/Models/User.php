@@ -53,4 +53,33 @@ public function getDailyBonusAvailableAttribute()
     return !$this->user_logs()->whereDate('created_at', now()->toDateString())->exists();
 }
 
+public function questionAttempts(){
+    return $this->hasMany(UserQuestionAttempt::class);
+}
+
+public function activePackages()
+{
+    return $this->belongsToMany(PremiumPackages::class, 'user_packages', 'user_id', 'premium_package_id')
+                ->withPivot(['is_active', 'payment_status', 'is_unlimited', 'end_date'])
+                ->wherePivot('is_active', true)
+                ->wherePivot('payment_status', 'completed')
+                ->where(function($query) {
+                    $query->where('user_packages.is_unlimited', true)
+                          ->orWhere('user_packages.end_date', '>=', now());
+                });
+}
+
+public function hasAccessToExam($examId)
+{
+    return $this->activePackages()->whereHas('exams', function($query) use ($examId) {
+        $query->where('exam_id', $examId);
+    })->exists();
+}
+
+public function hasAccessToQuestionSet($questionSetId)
+{
+    return $this->activePackages()->whereHas('questionSets', function($query) use ($questionSetId) {
+        $query->where('question_set_id', $questionSetId);
+    })->exists();
+}
 }

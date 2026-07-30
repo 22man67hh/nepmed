@@ -14,10 +14,8 @@ import {
   CheckCircle2, 
   X, 
   ShieldCheck, 
-  Inbox,
   AlertCircle,
   Clock,
-  Eye,
   FileText
 } from "lucide-react";
 import { motion } from "motion/react";
@@ -26,9 +24,10 @@ import { UserProfile, CMSContent } from "../types";
 interface LoginScreenProps {
   onLoginSuccess: (profile: UserProfile, preferredExam: string) => void;
   cmsContent: CMSContent;
+  dbExams?: any[];
 }
 
-export default function LoginScreen({ onLoginSuccess, cmsContent }: LoginScreenProps) {
+export default function LoginScreen({ onLoginSuccess, cmsContent, dbExams = [] }: LoginScreenProps) {
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -36,7 +35,7 @@ export default function LoginScreen({ onLoginSuccess, cmsContent }: LoginScreenP
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [preferredExam, setPreferredExam] = useState<string>(() => {
-    return cmsContent?.targetExams?.[0]?.id || "mec-ug";
+    return (dbExams?.[0]?.id?.toString()) || cmsContent?.targetExams?.[0]?.id || "mec-ug";
   });
   const [sex, setSex] = useState("Male");
   const [age, setAge] = useState("");
@@ -46,8 +45,6 @@ export default function LoginScreen({ onLoginSuccess, cmsContent }: LoginScreenP
   const [otpCode, setOtpCode] = useState("");
   const [otpError, setOtpError] = useState("");
   const [otpLoading, setOtpLoading] = useState(false);
-  const [simulatedOtp, setSimulatedOtp] = useState("");
-  const [sentViaEmail, setSentViaEmail] = useState(false);
 
   // Terms and Privacy acceptance states
   const [termsAccepted, setTermsAccepted] = useState(false);
@@ -63,31 +60,32 @@ export default function LoginScreen({ onLoginSuccess, cmsContent }: LoginScreenP
       setError("Please fill in all required fields.");
       return;
     }
-    if (isSignUp && !name) {
-      setError("Please provide your full name.");
-      return;
-    }
-    if (isSignUp && !age) {
-      setError("Please provide your age.");
-      return;
-    }
-    if (isSignUp && !termsAccepted) {
-      setError("You must accept the Terms and Conditions and Privacy Policy to register.");
-      return;
+    if (isSignUp) {
+      if (!name) {
+        setError("Please provide your full name.");
+        return;
+      }
+      if (!age) {
+        setError("Please provide your age.");
+        return;
+      }
+      if (!termsAccepted) {
+        setError("You must accept the Terms and Conditions and Privacy Policy to register.");
+        return;
+      }
     }
 
     setIsLoading(true);
 
     if (isSignUp) {
-      // REGISTER FLOW -> Calls real register API
       try {
         const response = await fetch("/api/register", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ 
-            name: name,
+            name,
             email: email.toLowerCase(),
-            password: password,
+            password,
             password_confirmation: password
           })
         });
@@ -95,22 +93,19 @@ export default function LoginScreen({ onLoginSuccess, cmsContent }: LoginScreenP
         setIsLoading(false);
         if (data.status || data.success) {
           setShowOtpScreen(true);
-          setSentViaEmail(true);
-          setSimulatedOtp(data.simulatedOtp || "");
         } else {
           setError(data.message || data.error || (data.errors ? Object.values(data.errors).flat().join(" ") : "Failed to register. Please try again."));
         }
-      } catch (err) {
+      } catch {
         setIsLoading(false);
         setError("Network error. Failed to register. Please try again.");
       }
     } else {
-      // LOGIN FLOW -> Calls real login API
       try {
         const response = await fetch("/api/login", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: email.toLowerCase(), password: password })
+          body: JSON.stringify({ email: email.toLowerCase(), password })
         });
         const data = await response.json();
         setIsLoading(false);
@@ -131,7 +126,7 @@ export default function LoginScreen({ onLoginSuccess, cmsContent }: LoginScreenP
         } else {
           setError(data.message || data.error || "Invalid credentials. Please check and try again.");
         }
-      } catch (err) {
+      } catch {
         setIsLoading(false);
         setError("Network error. Failed to log in. Please try again.");
       }
@@ -156,12 +151,11 @@ export default function LoginScreen({ onLoginSuccess, cmsContent }: LoginScreenP
       const data = await response.json();
       
       if (data.status || data.success) {
-        // OTP verified successfully. Now log in automatically using their credentials to get the token!
         try {
           const loginResponse = await fetch("/api/login", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email: email.toLowerCase(), password: password })
+            body: JSON.stringify({ email: email.toLowerCase(), password })
           });
           const loginData = await loginResponse.json();
           setOtpLoading(false);
@@ -176,14 +170,14 @@ export default function LoginScreen({ onLoginSuccess, cmsContent }: LoginScreenP
               avatarUrl: `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(email)}`,
               isLoggedIn: true,
               role: loginData.user?.role || loginData.role || undefined,
-              age: age,
-              sex: sex,
+              age,
+              sex,
               purchasedSetIds: ["mec-ug-2023", "nmcle-2023", "ku-mcq-mock-1"]
             }, preferredExam);
           } else {
             setOtpError(loginData.message || "Failed to log in automatically after verification. Please log in manually.");
           }
-        } catch (loginErr) {
+        } catch {
           setOtpLoading(false);
           setOtpError("Authentication failed. Please try logging in manually.");
         }
@@ -191,7 +185,7 @@ export default function LoginScreen({ onLoginSuccess, cmsContent }: LoginScreenP
         setOtpLoading(false);
         setOtpError(data.message || data.error || "Incorrect OTP verification code. Please check and try again.");
       }
-    } catch (err) {
+    } catch {
       setOtpLoading(false);
       setOtpError("Failed to verify OTP due to connection issues. Please try again.");
     }
@@ -209,13 +203,11 @@ export default function LoginScreen({ onLoginSuccess, cmsContent }: LoginScreenP
       const data = await response.json();
       setOtpLoading(false);
       if (data.status || data.success) {
-        setSimulatedOtp(data.simulatedOtp || "");
-        setSentViaEmail(true);
         alert("OTP Resent successfully!");
       } else {
         setOtpError(data.message || data.error || "Failed to resend. Please try again.");
       }
-    } catch (e) {
+    } catch {
       setOtpLoading(false);
       setOtpError("Connection error resending code.");
     }
@@ -227,23 +219,14 @@ export default function LoginScreen({ onLoginSuccess, cmsContent }: LoginScreenP
 
     const googleClientId = (import.meta as any).env?.VITE_GOOGLE_CLIENT_ID;
     if (!googleClientId) {
-      console.warn("VITE_GOOGLE_CLIENT_ID is not configured. Bypassing Google OAuth with mock login for development.");
-      setTimeout(() => {
-        setIsLoading(false);
-        onLoginSuccess({
-          email: "subedisunil841@gmail.com",
-          name: "Dr. Sunil Subedi",
-          avatarUrl: "https://api.dicebear.com/7.x/adventurer/svg?seed=sunil",
-          isLoggedIn: true,
-          purchasedSetIds: ["mec-ug-2023", "nmcle-2023", "ku-mcq-mock-1"]
-        }, preferredExam);
-      }, 1000);
+      setError("Google Login is not configured.");
+      setIsLoading(false);
       return;
     }
 
     if (typeof window === "undefined" || !(window as any).google) {
       setIsLoading(false);
-      setError("Google authentication service is still loading. Please wait a moment and try again.");
+      setError("Google authentication service is unavailable. Please wait a moment and try again.");
       return;
     }
 
@@ -254,7 +237,7 @@ export default function LoginScreen({ onLoginSuccess, cmsContent }: LoginScreenP
         callback: async (response: any) => {
           if (response.error) {
             setIsLoading(false);
-            setError("Google login was cancelled or failed: " + response.error);
+            setError("Google login was cancelled or failed.");
             return;
           }
 
@@ -285,7 +268,7 @@ export default function LoginScreen({ onLoginSuccess, cmsContent }: LoginScreenP
               } else {
                 setError(data.message || "Failed to authenticate Google user on backend.");
               }
-            } catch (err) {
+            } catch {
               setIsLoading(false);
               setError("Network error communicating with server after Google sign-in.");
             }
@@ -305,11 +288,9 @@ export default function LoginScreen({ onLoginSuccess, cmsContent }: LoginScreenP
 
   return (
     <div id="login-container" className="min-h-screen bg-slate-950 flex flex-col justify-center items-center p-4 relative overflow-y-auto">
-      {/* Decorative subtle medical background nodes */}
       <div className="absolute top-0 left-0 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
       <div className="absolute bottom-0 right-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl translate-x-1/2 translate-y-1/2 pointer-events-none" />
 
-      {/* Main Form container Card */}
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -340,28 +321,6 @@ export default function LoginScreen({ onLoginSuccess, cmsContent }: LoginScreenP
                 </p>
               </div>
             </div>
-
-            {/* HIGH-FIDELITY IN-APP OTP SANDBOX/DEVELOPER NOTIFICATION */}
-            {simulatedOtp && (
-              <div className="bg-slate-950 border border-indigo-500/30 p-4 rounded-xl space-y-2">
-                <div className="flex items-center gap-2 text-xs font-bold text-indigo-400">
-                  <Inbox className="w-4 h-4 shrink-0" />
-                  <span>[IN-APP EMAIL SANDBOX]</span>
-                </div>
-                <div className="text-[11px] text-slate-300 space-y-1">
-                  <p><span className="text-slate-500 font-mono">From:</span> NepMedMCQ Editorial Board</p>
-                  <p><span className="text-slate-500 font-mono">To:</span> {email}</p>
-                  <p className="pt-1.5 font-sans leading-relaxed text-slate-200">
-                    "Your secure NepMedMCQ email confirmation code is: <strong className="text-emerald-400 font-mono text-xs select-all px-1.5 py-0.5 bg-emerald-500/10 rounded">{simulatedOtp}</strong>"
-                  </p>
-                </div>
-                {!sentViaEmail && (
-                  <p className="text-[9px] text-slate-500 italic mt-1 leading-normal">
-                    * SMTP unconfigured. Running in High-Fidelity Simulator mode. Code shown above.
-                  </p>
-                )}
-              </div>
-            )}
 
             <form onSubmit={handleVerifyOtp} className="space-y-4">
               <div>
@@ -533,7 +492,13 @@ export default function LoginScreen({ onLoginSuccess, cmsContent }: LoginScreenP
                   onChange={(e) => setPreferredExam(e.target.value)}
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2.5 px-3.5 text-white focus:outline-none focus:border-emerald-500 text-xs cursor-pointer transition-colors font-sans"
                 >
-                  {cmsContent?.targetExams && cmsContent.targetExams.length > 0 ? (
+                  {dbExams && dbExams.length > 0 ? (
+                    dbExams.map((exam) => (
+                      <option key={exam.id} value={exam.id.toString()} className="bg-slate-900 text-slate-200">
+                        {exam.name || exam.code || exam.id}
+                      </option>
+                    ))
+                  ) : cmsContent?.targetExams && cmsContent.targetExams.length > 0 ? (
                     cmsContent.targetExams.map((exam) => (
                       <option key={exam.id} value={exam.id} className="bg-slate-900 text-slate-200">
                         {exam.name || exam.code || exam.id}
@@ -543,9 +508,9 @@ export default function LoginScreen({ onLoginSuccess, cmsContent }: LoginScreenP
                     <>
                       <option value="mec-ug" className="bg-slate-900 text-slate-200">MEC-UG (Undergraduate)</option>
                       <option value="mec-pg" className="bg-slate-900 text-slate-200">MEC-PG (Postgraduate)</option>
-                      <option value="nmcle" className="bg-slate-900 text-slate-200">NMCLE (Licensing Board)</option>
-                      <option value="ku-mcq" className="bg-slate-900 text-slate-200">KU MCQ (Entrance)</option>
-                      <option value="loksewa" className="bg-slate-900 text-slate-200">Loksewa (Medical Officer)</option>
+                      <option value="nmcle" className="bg-slate-900 text-slate-200">NMCLE (Licensing)</option>
+                      <option value="ku-mcq" className="bg-slate-900 text-slate-200">KU MCQ</option>
+                      <option value="loksewa" className="bg-slate-900 text-slate-200">Loksewa</option>
                     </>
                   )}
                 </select>
@@ -611,7 +576,6 @@ export default function LoginScreen({ onLoginSuccess, cmsContent }: LoginScreenP
               </div>
             </div>
 
-            {/* Custom Google Login Button */}
             <button
               onClick={handleGoogleLogin}
               type="button"
@@ -673,7 +637,7 @@ export default function LoginScreen({ onLoginSuccess, cmsContent }: LoginScreenP
         </div>
       </div>
 
-      {/* ---------------- TERMS AND CONDITIONS MODAL ---------------- */}
+      {/* TERMS AND CONDITIONS MODAL */}
       {showTermsModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-slate-900 border border-slate-800 w-full max-w-lg rounded-2xl p-6 shadow-2xl space-y-4 max-h-[80vh] overflow-y-auto text-slate-300">
@@ -695,22 +659,17 @@ export default function LoginScreen({ onLoginSuccess, cmsContent }: LoginScreenP
               
               <h4 className="text-white font-bold font-sans">1. Acceptance of Terms</h4>
               <p>
-                By creating an account or accessing the NepMedMCQ Study Engine, you explicitly agree to bind yourself legally to these Terms and Conditions. These terms govern all uses of NepMedMCQ services, mock examinations, past papers, and AI-powered medical tutoring elements.
+                By creating an account or accessing the NepMedMCQ Study Engine, you explicitly agree to bind yourself legally to these Terms and Conditions.
               </p>
 
               <h4 className="text-white font-bold font-sans">2. Educational Purposes and Disclaimers</h4>
               <p>
-                NepMedMCQ is strictly an educational support system designed to help medical students and professionals prepare for board examinations (MEC-UG, MEC-PG, NMCLE, and Loksewa). All study explanations, MNEMONICS, and AI concepts are optimized for high-yield recall, but DO NOT constitute official medical diagnoses, clinical guidelines, or standard treatment advice.
+                NepMedMCQ is strictly an educational support system designed to help medical students prepare for board examinations (MEC-UG, MEC-PG, NMCLE, and Loksewa).
               </p>
 
               <h4 className="text-white font-bold font-sans">3. Account Integrity & Verification</h4>
               <p>
-                To maintain licensing integrity, users must register using a legitimate email address. Verification via a secure One-Time Password (OTP) is mandatory to activate account privileges and protect exam attempt metrics.
-              </p>
-
-              <h4 className="text-white font-bold font-sans">4. Intellectual Property & Fair Use</h4>
-              <p>
-                All original exam-style questions, Mnemonics, AI breakdown templates, and design configurations are property of NepMedMCQ. Sharing premium unlocked sets or duplicating content outside of personal study use is strictly forbidden.
+                Verification via a secure One-Time Password (OTP) is mandatory to activate account privileges and protect exam attempt metrics.
               </p>
             </div>
 
@@ -726,7 +685,7 @@ export default function LoginScreen({ onLoginSuccess, cmsContent }: LoginScreenP
         </div>
       )}
 
-      {/* ---------------- PRIVACY POLICY MODAL ---------------- */}
+      {/* PRIVACY POLICY MODAL */}
       {showPrivacyModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-slate-900 border border-slate-800 w-full max-w-lg rounded-2xl p-6 shadow-2xl space-y-4 max-h-[80vh] overflow-y-auto text-slate-300">
@@ -748,22 +707,12 @@ export default function LoginScreen({ onLoginSuccess, cmsContent }: LoginScreenP
               
               <h4 className="text-white font-bold font-sans">1. Information We Collect</h4>
               <p>
-                When registering on NepMedMCQ, we securely store your email address, full name, age, gender/sex, and preferred board exam targets. This data is explicitly used to personalize study recommendations, generate practice reports, and calculate leaderboard standouts.
+                We securely store your email address, full name, age, gender/sex, and preferred board exam target to personalize study recommendations.
               </p>
 
               <h4 className="text-white font-bold font-sans">2. Exam Tracking & Analytics</h4>
               <p>
-                We store your study attempts, active exam answers, timing statistics, and bookmark selections in server logs and browser cookies. This allows you to retain historical report summaries, view wrong-answer lists, and track progress over time without losing progress.
-              </p>
-
-              <h4 className="text-white font-bold font-sans">3. Security and OTP Verification</h4>
-              <p>
-                Your security is paramount. We protect account registrations by triggering a secure OTP (One-Time Password) code to ensure email authenticity and protect from unauthorized credential use.
-              </p>
-
-              <h4 className="text-white font-bold font-sans">4. Cookies Notice</h4>
-              <p>
-                We use browser-based local storage and persistent cookies to record visual configuration states (such as active light/dark theme preference) and maintain safe log-in sessions. By registering, you explicitly accept this cookie storage design.
+                We store your study attempts, active exam answers, timing statistics, and bookmark selections to retain historical report summaries.
               </p>
             </div>
 
@@ -778,7 +727,6 @@ export default function LoginScreen({ onLoginSuccess, cmsContent }: LoginScreenP
           </div>
         </div>
       )}
-
     </div>
   );
 }

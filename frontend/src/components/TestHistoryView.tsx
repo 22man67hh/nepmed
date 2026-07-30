@@ -55,11 +55,17 @@ export default function TestHistoryView({
   const totalTimeMin = Math.round(totalTimeSec / 60);
 
   const getSetTitle = (setId: string) => {
+    if (setId.startsWith("subject-practice-")) {
+      return `Subject Wise Practice (${setId.replace("subject-practice-", "")})`;
+    }
     const set = allSets.find(s => s.id === setId);
     return set ? set.title : "Deleted/Unknown Practice Set";
   };
 
   const getExamLabel = (setId: string) => {
+    if (setId.startsWith("subject-practice-")) {
+      return "General Practice";
+    }
     const set = allSets.find(s => s.id === setId);
     if (!set) return "Medical Set";
     const labels: { [key: string]: string } = {

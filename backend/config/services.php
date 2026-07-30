@@ -40,5 +40,15 @@ return [
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),
         'redirect' => env('GOOGLE_REDIRECT_URI'),
     ],
+       'khalti' => [
+        'secret_key' => env('KHALTI_KEY'),
+        'base_url' => env('KHALTI_BASE_URL', 'https://khalti.com/api/v2/'),
+    ],
+    'esewa' => [
+        'secret_key' => env('ESEWA_KEY'),
+        'base_url' => env('ESEWA_BASE_URL', 'https://esewa.com.np/epay/main'),
+        'product_code' => env('ESEWA_PRODUCT_CODE', 'GROCERY_APP'),
+        'status_url' => env('ESEWA_STATUS_URL', 'https://rc-epay.esewa.com.np/api/epay/transaction/status/'),
+    ],
 
 ];
