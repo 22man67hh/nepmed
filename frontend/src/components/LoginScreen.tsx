@@ -114,6 +114,7 @@ export default function LoginScreen({ onLoginSuccess, cmsContent, dbExams = [] }
             localStorage.setItem("nepmed_auth_token", data.token);
           }
           onLoginSuccess({
+            id: data.user?.id || "user-1",
             email: data.user?.email || email.toLowerCase(),
             name: data.user?.name || email.split("@")[0].toUpperCase(),
             avatarUrl: `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(email)}`,
@@ -165,6 +166,7 @@ export default function LoginScreen({ onLoginSuccess, cmsContent, dbExams = [] }
               localStorage.setItem("nepmed_auth_token", loginData.token);
             }
             onLoginSuccess({
+              id: `user-${Date.now()}`,
               email: email.toLowerCase(),
               name: loginData.user?.name || name,
               avatarUrl: `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(email)}`,
@@ -258,6 +260,7 @@ export default function LoginScreen({ onLoginSuccess, cmsContent, dbExams = [] }
                 }
                 
                 onLoginSuccess({
+                  id: data.user?.id || `user-${Date.now()}`,
                   email: data.user?.email || "user@nepmed.edu",
                   name: data.user?.name || "Google User",
                   avatarUrl: `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(data.user?.email || "google")}`,

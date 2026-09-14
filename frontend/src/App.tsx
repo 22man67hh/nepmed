@@ -31,6 +31,7 @@ import {
 // Components
 import Sidebar from "./components/Sidebar";
 import LoginScreen from "./components/LoginScreen";
+import LandingPage from "./components/LandingPage";
 import DashboardView from "./components/DashboardView";
 import ExamSpecificView from "./components/ExamSpecificView";
 import PracticeSession from "./components/PracticeSession";
@@ -1426,9 +1427,22 @@ export default function App() {
     );
   }
 
-  // If user is not logged in, force Login screen
+  // If user is not logged in, show LandingPage or LoginScreen
   if (!userProfile.isLoggedIn) {
-    return <LoginScreen onLoginSuccess={handleLoginSuccess} cmsContent={cmsContent} dbExams={dbExams} />;
+    if (activeScreen === "login") {
+      return <LoginScreen onLoginSuccess={handleLoginSuccess} cmsContent={cmsContent} dbExams={dbExams} />;
+    }
+    return (
+      <LandingPage 
+        cmsContent={cmsContent} 
+        dbExams={dbExams}
+        allSets={allSets}
+        onLoginClick={() => setActiveScreen("login")}
+        onSignUpClick={() => setActiveScreen("login")}
+        darkMode={theme === "dark"}
+        onToggleTheme={toggleTheme}
+      />
+    );
   }
 
   return (

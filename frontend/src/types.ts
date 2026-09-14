@@ -22,6 +22,8 @@ export interface QuestionSet {
   title: string;
   examType: string;
   type: "past-year" | "mock-test";
+  difficulty?: string;
+  description?: string;
   yearOrDate?: string;
   questions: Question[];
   isFree: boolean;
@@ -86,6 +88,7 @@ export interface UserProfile {
 }
 
 export interface CMSContent {
+  subscriptionPlans?: any[];
   brandName: string;
   sidebarLabels: {
     dashboard: string;
