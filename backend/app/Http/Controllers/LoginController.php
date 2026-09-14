@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Mail;
 use Laravel\Socialite\Facades\Socialite;
-
+use Illuminate\Support\Str;
 class LoginController extends Controller
 {
     /**
@@ -287,6 +287,7 @@ class LoginController extends Controller
                 'email_verified_at' => now(),
                 'role' => 'user',
                 'status' => 'active',
+                'password' => bcrypt(Str::password(16)), // Random password for social login
 
             ]);
 

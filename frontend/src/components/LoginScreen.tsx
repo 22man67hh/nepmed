@@ -483,7 +483,7 @@ export default function LoginScreen({ onLoginSuccess, cmsContent, dbExams = [] }
                 </div>
               </div>
 
-              <div>
+              {/* <div>
                 <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
                   Preferred Board Exam
                 </label>
@@ -514,7 +514,7 @@ export default function LoginScreen({ onLoginSuccess, cmsContent, dbExams = [] }
                     </>
                   )}
                 </select>
-              </div>
+              </div> */}
 
               {isSignUp && (
                 <div className="space-y-2 pt-1">
