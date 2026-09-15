@@ -470,6 +470,7 @@ export default function App() {
           (window as any).__dbExams = data.exams;
           // Now load sets using exam data for proper slug mapping
           loadAllSets(data.exams);
+          console.log(data.exams)
         } else {
           loadAllSets([]);
         }

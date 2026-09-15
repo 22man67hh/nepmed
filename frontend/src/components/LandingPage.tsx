@@ -302,7 +302,7 @@ export default function LandingPage({
     return [
       { id: "mec-pg", name: "MECEE-PG MD/MS", shortName: "MECEE PG", category: "Medical PG", isLive: true, description: "Official syllabus blueprint.", slug: "mec-pg" }
     ];
-  }, [cmsContent]);
+  }, [dbExams]);
 
   // Derived question sets directly from DB
   const questionSetsPool = useMemo(() => {
