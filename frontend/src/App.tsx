@@ -1440,8 +1440,15 @@ export default function App() {
         onLoginClick={() => setActiveScreen("login")}
         onSignUpClick={() => setActiveScreen("login")}
         darkMode={theme === "dark"}
-        onToggleTheme={toggleTheme}
-      />
+ onToggleTheme={() => {
+                setTheme(prev => {
+                  const next = prev === "dark" ? "light" : "dark";
+                  localStorage.setItem("nepmed_theme", next);
+                  return next;
+                });
+              }}      />
+
+      
     );
   }
 

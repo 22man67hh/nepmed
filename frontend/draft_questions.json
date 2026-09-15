@@ -1,1 +1,32 @@
-[]
+[
+  {
+    "id": "DRAFT-001",
+    "questionText": "Calculate the equivalent resistance when three resistors of 6 ohms are connected in parallel.",
+    "options": [
+      "2 ohms",
+      "18 ohms",
+      "3 ohms",
+      "9 ohms"
+    ],
+    "correctOptionIndex": 0,
+    "explanation": "For parallel connection: 1/Req = 1/R1 + 1/R2 + 1/R3 = 1/6 + 1/6 + 1/6 = 3/6 = 1/2. Therefore Req = 2 ohms.",
+    "subject": "Physics",
+    "topic": "Electricity & Magnetism",
+    "referenceYear": "2025"
+  },
+  {
+    "id": "DRAFT-002",
+    "questionText": "Which type of plant tissue is responsible for transport of water from roots to leaves?",
+    "options": [
+      "Xylem",
+      "Phloem",
+      "Parenchyma",
+      "Collenchyma"
+    ],
+    "correctOptionIndex": 0,
+    "explanation": "Xylem is specialized for water and mineral conduction. Phloem is for food and sugar transport.",
+    "subject": "Botany",
+    "topic": "Plant Anatomy & Physiology",
+    "referenceYear": "2025"
+  }
+]
