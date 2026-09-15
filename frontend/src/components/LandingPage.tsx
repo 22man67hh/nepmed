@@ -59,6 +59,8 @@ interface LandingPageProps {
   darkMode?: boolean;
   onToggleTheme?: () => void;
   dbExams?: any[];
+  dbPackages?: any[];
+  dbTeams?: any[];
 }
 
 type Tab = 'home' | 'features' | 'exams' | 'question_banks' | 'pricing' | 'refer' | 'about' | 'exam_detail';
@@ -148,7 +150,9 @@ export default function LandingPage({
   allSets = [],
   darkMode: externalDarkMode,
   onToggleTheme: externalToggleTheme,
-  dbExams = []
+  dbExams = [],
+  dbPackages = [],
+  dbTeams = []
 }: LandingPageProps) {
   // Theme state persistence in localStorage
   const [internalDarkMode, setInternalDarkMode] = useState<boolean>(() => {
@@ -296,7 +300,7 @@ export default function LandingPage({
     
     // Fallback if dbExams is empty
     return [
-      { id: "mec-pg", name: "MECEE-PG MD/MS", shortName: "MECEE PG", category: "Medical PG", isLive: true }
+      { id: "mec-pg", name: "MECEE-PG MD/MS", shortName: "MECEE PG", category: "Medical PG", isLive: true, description: "Official syllabus blueprint.", slug: "mec-pg" }
     ];
   }, [cmsContent]);
 
@@ -1343,11 +1347,12 @@ export default function LandingPage({
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-              {(cmsContent?.subscriptionPlans && cmsContent.subscriptionPlans.length > 0 ? cmsContent.subscriptionPlans.map(p => ({
+              {(dbPackages && dbPackages.length > 0 ? dbPackages.map(p => ({
                 id: p.id,
-                title: p.title,
+                title: p.name || p.title,
                 priceNpr: p.price,
-                billingPeriod: `${p.days} Days`,
+                billingPeriod: p.duration ? `${p.duration} Days` : (p.days ? `${p.days} Days` : "Lifetime"),
+
                 features: [
                   "Access to Full Question Papers",
                   "Subject & Topic-wise practice tests",
@@ -1355,8 +1360,8 @@ export default function LandingPage({
                   "Community discussion & AI Tutor support",
                   "High-yield notes library access"
                 ],
-                highlighted: !!p.isPopular,
-                badge: p.tag || (p.isPopular ? "Most Popular" : undefined)
+                highlighted: !!p.is_popular || !!p.isPopular,
+                badge: p.tag || (p.is_popular || p.isPopular ? "Most Popular" : undefined)
               })) : [
                 {
                   id: "free-tier",
@@ -1693,21 +1698,21 @@ export default function LandingPage({
                 <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Distinguished clinicians, subject experts, and technology leaders guiding the platform.</p>
               </div>
               <LeadershipCards 
-                editorialTeam={cmsContent?.editorialTeam} 
+                editorialTeam={dbTeams && dbTeams.filter(t => t.type === 'core').length > 0 ? dbTeams.filter(t => t.type === 'core' && t.enabled !== 0).map(t => ({...t, institution: t.hospital || t.institution})) : cmsContent?.editorialTeam} 
                 isDark={isDark} 
               />
             </div>
 
             {/* Section Editors Across All Target Exams */}
-            {((cmsContent?.chiefEditors && cmsContent.chiefEditors.length > 0) || true) && (
-              <div className="space-y-6 max-w-5xl mx-auto pt-4">
-                <div className="text-center space-y-1">
-                  <h3 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Section Editors</h3>
-                  <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Faculty specialists heading each target exam curriculum and past paper audits.</p>
+            {((dbTeams && dbTeams.filter(t => t.type === 'chief_editor').length > 0) || true) && (
+              <div className="space-y-6">
+                <div className="text-center space-y-2">
+                  <h3 className={`text-xl font-extrabold ${isDark ? 'text-white' : 'text-slate-900'}`}>Chief Academic Editors</h3>
+                  <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Leading the medical curriculum accuracy and relevance.</p>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                  {((cmsContent?.chiefEditors && cmsContent.chiefEditors.length > 0)
-                    ? cmsContent.chiefEditors.filter(ce => ce.enabled !== false)
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+                  {((dbTeams && dbTeams.filter(t => t.type === 'chief_editor').length > 0)
+                    ? dbTeams.filter(t => t.type === 'chief_editor' && t.enabled !== 0)
                     : [
                         { examName: "MECEE-PG (MD/MS)", editorName: "Dr. Sunil Subedi", role: "Section Editor, Senior Medical Officer", institution: "Medical Academic Board" },
                         { examName: "MECEE-BL (UG Entrance)", editorName: "Dr. Sunil Subedi", role: "Section Editor, ECFMG Certified Physician", institution: "Kathmandu Valley Medical Mentors" },
@@ -1728,14 +1733,14 @@ export default function LandingPage({
                       <div>
                         <div className="flex items-center gap-1.5 flex-wrap mb-2">
                           <span className="text-[9px] font-extrabold uppercase px-2 py-0.5 rounded bg-teal-500/10 text-teal-400 border border-teal-500/20">
-                            {ce.examName}
+                            {ce.examName || "Medical Exams"}
                           </span>
                         </div>
-                        <div className={`font-bold text-sm leading-snug ${isDark ? 'text-white' : 'text-slate-900'}`}>{ce.editorName}</div>
+                        <div className={`font-bold text-sm leading-snug ${isDark ? 'text-white' : 'text-slate-900'}`}>{ce.name || ce.editorName}</div>
                         <div className="text-[11px] text-teal-500 font-semibold mt-0.5">{ce.role}</div>
                       </div>
-                      {ce.institution && (
-                        <div className={`text-[10px] mt-2 pt-2 border-t ${isDark ? 'border-slate-800 text-slate-400' : 'border-slate-100 text-slate-500'}`}>{ce.institution}</div>
+                      {(ce.hospital || ce.institution) && (
+                        <div className={`text-[10px] mt-2 pt-2 border-t ${isDark ? 'border-slate-800 text-slate-400' : 'border-slate-100 text-slate-500'}`}>{ce.hospital || ce.institution}</div>
                       )}
                     </div>
                   ))}
@@ -1744,15 +1749,15 @@ export default function LandingPage({
             )}
 
             {/* Special Thanks & Academic Contributors */}
-            {((cmsContent?.specialThanks && cmsContent.specialThanks.length > 0) || true) && (
-              <div className="space-y-6 max-w-5xl mx-auto pt-4">
-                <div className="text-center space-y-1">
-                  <h3 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Special Thanks & Academic Contributors</h3>
-                  <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Heartfelt gratitude to eminent mentors, professors, resident doctors, and advisors.</p>
+            {((dbTeams && dbTeams.filter(t => t.type === 'special_thanks').length > 0) || true) && (
+              <div className="space-y-6">
+                <div className="text-center space-y-2">
+                  <h3 className={`text-xl font-extrabold ${isDark ? 'text-white' : 'text-slate-900'}`}>Special Thanks & Senior Advisors</h3>
+                  <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Acknowledging the immense contributions of our mentors.</p>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                  {((cmsContent?.specialThanks && cmsContent.specialThanks.length > 0)
-                    ? cmsContent.specialThanks.filter(st => st.enabled !== false)
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+                  {((dbTeams && dbTeams.filter(t => t.type === 'special_thanks').length > 0)
+                    ? dbTeams.filter(t => t.type === 'special_thanks' && t.enabled !== 0)
                     : [
                         { name: "Dr. Sandesh Devkota", roleOrAffiliation: "MBBS(UCMS)", note: "For clinical syllabus mapping, case simulation reviews, and question bank verification." },
                         { name: "Dr. Manish Bhandari", roleOrAffiliation: "MBBS(COMS)", note: "For high-yield clinical pearls, differential diagnosis tables, and explanation reviews." },
@@ -1771,13 +1776,13 @@ export default function LandingPage({
                     >
                       <div>
                         <h4 className={`font-bold text-sm leading-snug ${isDark ? 'text-white' : 'text-slate-900'}`}>{st.name}</h4>
-                        <p className="text-[11px] text-emerald-500 font-semibold mt-0.5">{st.roleOrAffiliation}</p>
+                        <p className="text-[11px] text-emerald-500 font-semibold mt-0.5">{st.role || st.roleOrAffiliation}</p>
                       </div>
-                      {st.note && (
+                      {(st.hospital || st.note) && (
                         <p className={`text-[11px] p-2.5 rounded-xl border leading-relaxed ${
                           isDark ? 'bg-slate-950/60 border-slate-800 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-700'
                         }`}>
-                          {st.note}
+                          {st.hospital || st.note}
                         </p>
                       )}
                     </div>

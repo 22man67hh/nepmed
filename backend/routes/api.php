@@ -24,6 +24,7 @@ Route::post('/question-import', [App\Http\Controllers\QuestionController::class,
 Route::post('/question-sets/{questionSet}/import', [App\Http\Controllers\QuestionSetController::class, 'importQuestions']);
 Route::apiResource('question-sets', App\Http\Controllers\QuestionSetController::class);
 Route::apiResource('premium-packages', App\Http\Controllers\PremiumPackageController::class);
+Route::apiResource('teams', App\Http\Controllers\TeamController::class);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/question-attempts', [App\Http\Controllers\QuestionAttemptControllelr::class, 'userQuestionAttempt']);

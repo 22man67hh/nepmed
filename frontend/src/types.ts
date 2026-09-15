@@ -25,6 +25,7 @@ export interface QuestionSet {
   difficulty?: string;
   description?: string;
   yearOrDate?: string;
+  subcategory?: string;
   questions: Question[];
   isFree: boolean;
   price: number; // in NPR, e.g., 20 or 30

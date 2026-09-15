@@ -497,6 +497,24 @@ export default function App() {
         }
       })
       .catch(err => console.error("Failed to load topics:", err));
+
+    fetch("/api/premium-packages")
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setDbPackages(data);
+        }
+      })
+      .catch(err => console.error("Failed to load packages:", err));
+
+    fetch("/api/teams")
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setDbTeams(data);
+        }
+      })
+      .catch(err => console.error("Failed to load teams:", err));
   }, []);
 
   const handleSaveCMSContent = async (newContent: CMSContent) => {
@@ -814,6 +832,8 @@ export default function App() {
   const [dbExams, setDbExams] = useState<any[]>([]);
   const [dbSubjects, setDbSubjects] = useState<any[]>([]);
   const [dbTopics, setDbTopics] = useState<any[]>([]);
+  const [dbPackages, setDbPackages] = useState<any[]>([]);
+  const [dbTeams, setDbTeams] = useState<any[]>([]);
 
   // 2. Synchronize State to LocalStorage
   useEffect(() => {
@@ -1436,6 +1456,8 @@ export default function App() {
       <LandingPage 
         cmsContent={cmsContent} 
         dbExams={dbExams}
+        dbPackages={dbPackages}
+        dbTeams={dbTeams}
         allSets={allSets}
         onLoginClick={() => setActiveScreen("login")}
         onSignUpClick={() => setActiveScreen("login")}
