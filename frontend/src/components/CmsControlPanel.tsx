@@ -460,7 +460,7 @@ export const CmsControlPanel: React.FC<CmsControlPanelProps> = ({
                       <span className="text-sm">🏥</span>
                     </div>
                     <h4 className="text-sm font-black text-white tracking-widest uppercase">
-                      {cmsLoginLabels?.brandName || "nepmedmcq"}
+                      {cmsLoginLabels?.brandName || "PrepzaNepal"}
                     </h4>
                     <p className="text-[10px] text-slate-400 max-w-xs mx-auto">
                       {cmsLoginLabels?.brandSubtitle || "Nepal's Premier Medical MCQ Prep"}

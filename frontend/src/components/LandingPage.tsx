@@ -47,9 +47,11 @@ import {
   Star,
   ChevronDown,
   UserCheck,
-  Share2
+  Share2,
+  Play
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { features } from "process";
 
 interface LandingPageProps {
   cmsContent: CMSContent;
@@ -61,6 +63,8 @@ interface LandingPageProps {
   dbExams?: any[];
   dbPackages?: any[];
   dbTeams?: any[];
+  dbSubjects?: any[];
+  dbTopics?: any[];
 }
 
 type Tab = 'home' | 'features' | 'exams' | 'question_banks' | 'pricing' | 'refer' | 'about' | 'exam_detail';
@@ -152,7 +156,9 @@ export default function LandingPage({
   onToggleTheme: externalToggleTheme,
   dbExams = [],
   dbPackages = [],
-  dbTeams = []
+  dbTeams = [],
+  dbSubjects = [],
+  dbTopics = []
 }: LandingPageProps) {
   // Theme state persistence in localStorage
   const [internalDarkMode, setInternalDarkMode] = useState<boolean>(() => {
@@ -312,14 +318,22 @@ export default function LandingPage({
   // Filtered question sets
   const filteredSets = useMemo(() => {
     return questionSetsPool.filter(set => {
-      const matchesExam = filterExam === 'all' || set.examType === filterExam || (filterExam === 'mec-ug' && set.id.startsWith('MECUG')) || (filterExam === 'mec-pg' && set.id.startsWith('MECPG'));
+      const targetConfig = targetExams.find(e => e.id === filterExam);
+      const targetSlug = targetConfig?.slug?.toLowerCase() || filterExam;
+      const setExamType = String(set.examType || "").toLowerCase();
+      
+      const matchesExam = filterExam === 'all' || 
+                          setExamType === filterExam.toLowerCase() || 
+                          setExamType === targetSlug || 
+                          (targetSlug === 'mec-ug' && set.id.toLowerCase().startsWith('mec-ug')) || 
+                          (targetSlug === 'mec-pg' && set.id.toLowerCase().startsWith('mec-pg'));
       const matchesSearch = !searchQuery || 
         set.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
         (set.subcategory && set.subcategory.toLowerCase().includes(searchQuery.toLowerCase())) ||
         (set.yearOrDate && set.yearOrDate.toLowerCase().includes(searchQuery.toLowerCase()));
       return matchesExam && matchesSearch;
     });
-  }, [questionSetsPool, filterExam, searchQuery]);
+  }, [questionSetsPool, filterExam, searchQuery, targetExams]);
 
   // Robust exam config lookup
   const selectedExamConfig = useMemo(() => {
@@ -533,14 +547,20 @@ export default function LandingPage({
                 </p>
 
                 <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight leading-tight sm:leading-none text-white !text-white drop-shadow-lg">
-                  Master Your Competitive & Licensing Exams with{" "}
-                  <span className="bg-gradient-to-r from-emerald-300 via-teal-200 to-cyan-300 bg-clip-text text-transparent">
-                    Precision High-Yield MCQs
-                  </span>
+                  {cmsContent?.heroTitle ? (
+                    <span dangerouslySetInnerHTML={{ __html: cmsContent.heroTitle.replace('Precision High-Yield MCQs', '<span class="bg-gradient-to-r from-emerald-300 via-teal-200 to-cyan-300 bg-clip-text text-transparent">Precision High-Yield MCQs</span>') }} />
+                  ) : (
+                    <>
+                      Master Your Competitive & Licensing Exams with{" "}
+                      <span className="bg-gradient-to-r from-emerald-300 via-teal-200 to-cyan-300 bg-clip-text text-transparent">
+                        Precision High-Yield MCQs
+                      </span>
+                    </>
+                  )}
                 </h1>
 
                 <p className="text-base sm:text-xl max-w-2xl mx-auto leading-relaxed font-medium text-slate-100 !text-slate-100 drop-shadow-md">
-                  Nepal's premier preparation hub for Medical, Engineering, Nursing, Licensing, and Loksewa exams. Features official blueprints, instant AI tutors, full curriculum notes, and real-time timed test simulations.
+                  {cmsContent?.heroDescription || "Nepal's premier preparation hub for Medical, Engineering, Nursing, Licensing, and Loksewa exams. Features official blueprints, instant AI tutors, full curriculum notes, and real-time timed test simulations."}
                 </p>
 
                 {/* Action Buttons */}
@@ -1026,6 +1046,46 @@ export default function LandingPage({
               </div>
             </div>
 
+            {/* Syllabus Section */}
+            {(() => {
+              const examSubjects = (dbSubjects || []).filter(s => String(s.exam_id) === String(selectedExamMeta.id));
+              if (examSubjects.length === 0) return null;
+              
+              return (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className={`text-xl sm:text-2xl font-extrabold tracking-tight border-l-4 border-emerald-500 pl-3.5 md:pl-4 py-1.5 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                        Official Syllabus & Subject Weightages
+                      </h3>
+                      <p className={`text-xs sm:text-sm mt-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+                        Distribution of marks according to the {selectedExamMeta.name} curriculum.
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {examSubjects.map(sub => (
+                      <div key={sub.id} className={`p-4 rounded-2xl border flex items-center justify-between transition-all hover:border-emerald-500/50 hover:shadow-md ${isDark ? 'bg-slate-900/60 border-slate-800' : 'bg-white border-slate-200'}`}>
+                        <div className="flex items-center gap-3">
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}>
+                            <BookOpen className={`w-5 h-5 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
+                          </div>
+                          <div>
+                            <h4 className={`font-bold text-sm leading-snug ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{sub.name}</h4>
+                            <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{sub.description || "Core subject module"}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className={`text-sm font-black text-emerald-500`}>{sub.weight}</span>
+                          <span className={`block text-[10px] uppercase font-bold tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Marks</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Targeted Question Sets for this exam */}
             <div className="space-y-6">
@@ -1044,12 +1104,16 @@ export default function LandingPage({
                 {(() => {
                   const matchingSets = questionSetsPool.filter(
                     set => {
-                      const examId = String(set.examType || "").toLowerCase();
+                      const setExamType = String(set.examType || "").toLowerCase();
                       const targetId = String(selectedExamMeta.id).toLowerCase();
-                      return examId === targetId || 
-                             examId.includes(targetId) ||
-                             (targetId === 'mec-ug' && set.id.toLowerCase().startsWith('mec-ug')) || 
-                             (targetId === 'mec-pg' && set.id.toLowerCase().startsWith('mec-pg'));
+                      const targetSlug = String(selectedExamMeta.slug || "").toLowerCase();
+                      
+                      return setExamType === targetId || 
+                             setExamType === targetSlug ||
+                             setExamType.includes(targetId) ||
+                             setExamType.includes(targetSlug) ||
+                             (targetSlug === 'mec-ug' && set.id.toLowerCase().startsWith('mec-ug')) || 
+                             (targetSlug === 'mec-pg' && set.id.toLowerCase().startsWith('mec-pg'));
                     }
                   );
 
@@ -1102,10 +1166,14 @@ export default function LandingPage({
 
                         <button
                           onClick={(e) => { e.stopPropagation(); onSignUpClick(); }}
-                          className="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-500 text-slate-950 hover:bg-emerald-400 flex items-center gap-1 shadow"
+                          className={`px-3 py-1.5 rounded-lg text-xs font-bold ${
+                            set.isFree === true || (set as any).is_free === true || (set as any).is_free === 1 || (set as any).is_free === "1" 
+                              ? "bg-teal-500 text-white hover:bg-teal-400" 
+                              : "bg-emerald-500 text-slate-950 hover:bg-emerald-400"
+                          } flex items-center gap-1 shadow`}
                         >
-                          <Lock className="w-3 h-3" />
-                          <span>Unlock Mock</span>
+                          {set.isFree === true || (set as any).is_free === true || (set as any).is_free === 1 || (set as any).is_free === "1" ? <Play className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
+                          <span>{set.isFree === true || (set as any).is_free === true || (set as any).is_free === 1 || (set as any).is_free === "1" ? "Try Free" : "Unlock Mock"}</span>
                         </button>
                       </div>
                     </div>
@@ -1212,10 +1280,14 @@ export default function LandingPage({
 
                     <button
                       onClick={(e) => { e.stopPropagation(); onSignUpClick(); }}
-                      className="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-500 text-slate-950 hover:bg-emerald-400 flex items-center gap-1 shadow"
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold ${
+                        set.isFree === true || (set as any).is_free === true || (set as any).is_free === 1 || (set as any).is_free === "1"
+                          ? "bg-teal-500 text-white hover:bg-teal-400"
+                          : "bg-emerald-500 text-slate-950 hover:bg-emerald-400"
+                      } flex items-center gap-1 shadow`}
                     >
-                      <Lock className="w-3 h-3" />
-                      <span>Unlock Set</span>
+                      {set.isFree === true || (set as any).is_free === true || (set as any).is_free === 1 || (set as any).is_free === "1" ? <Play className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
+                      <span>{set.isFree === true || (set as any).is_free === true || (set as any).is_free === 1 || (set as any).is_free === "1" ? "Try Free" : "Unlock Set"}</span>
                     </button>
                   </div>
                 </div>
@@ -1352,62 +1424,55 @@ export default function LandingPage({
                 title: p.name || p.title,
                 priceNpr: p.price,
                 billingPeriod: p.duration ? `${p.duration} Days` : (p.days ? `${p.days} Days` : "Lifetime"),
-
-                features: [
-                  "Access to Full Question Papers",
-                  "Subject & Topic-wise practice tests",
-                  "Performance analytics & percentile ranks",
-                  "Community discussion & AI Tutor support",
-                  "High-yield notes library access"
-                ],
-                highlighted: !!p.is_popular || !!p.isPopular,
-                badge: p.tag || (p.is_popular || p.isPopular ? "Most Popular" : undefined)
+                features: Array.isArray(p.descriptions) ? p.descriptions : (p.description ? [p.description] : ["All premium features included"]),
+                highlighted: p.is_popular === true || p.is_popular === "1" || p.is_popular === 1 || p.isPopular === true || p.isPopular === "1" || p.isPopular === 1,
+                badge: p.tag || (p.is_popular === true || p.is_popular === "1" || p.is_popular === 1 || p.isPopular === true || p.isPopular === "1" || p.isPopular === 1 ? "Most Popular" : undefined)
               })) : [
-                {
-                  id: "free-tier",
-                  title: "Free Starter",
-                  priceNpr: 0,
-                  billingPeriod: "Forever",
-                  features: [
-                    "Access to Sample Question Papers",
-                    "Subject-wise mini practice tests",
-                    "Basic performance analytics",
-                    "Community discussion forum"
-                  ],
-                  highlighted: false,
-                  badge: undefined
-                },
-                {
-                  id: "pro-6m",
-                  title: "6-Month Exam Pro",
-                  priceNpr: 2999,
-                  billingPeriod: "6 Months",
-                  features: [
-                    "Unlimited MECEE, IOE, NMCLE & Loksewa Mocks",
-                    "Full High-Yield Notes & Formula Library",
-                    "Instant AI Tutor & Step-by-Step Rationales",
-                    "Spaced repetition flashcards",
-                    "Complete past papers with verified keys",
-                    "Priority mentor doubt resolution"
-                  ],
-                  highlighted: true,
-                  badge: "Most Popular"
-                },
-                {
-                  id: "pro-1y",
-                  title: "1-Year Complete Master",
-                  priceNpr: 4499,
-                  billingPeriod: "12 Months",
-                  features: [
-                    "All features in 6-Month Pro",
-                    "Full access to all Target Exam categories",
-                    "Offline download & export support",
-                    "Exclusive high-yield PDF summaries",
-                    "One-on-one rank guidance"
-                  ],
-                  highlighted: false,
-                  badge: undefined
-                }
+                // {
+                //   id: "free-tier",
+                //   title: "Free Starter",
+                //   priceNpr: 0,
+                //   billingPeriod: "Forever",
+                //   features: [
+                //     "Access to Sample Question Papers",
+                //     "Subject-wise mini practice tests",
+                //     "Basic performance analytics",
+                //     "Community discussion forum"
+                //   ],
+                //   highlighted: false,
+                //   badge: undefined
+                // },
+                // {
+                //   id: "pro-6m",
+                //   title: "6-Month Exam Pro",
+                //   priceNpr: 2999,
+                //   billingPeriod: "6 Months",
+                //   features: [
+                //     "Unlimited MECEE, IOE, NMCLE & Loksewa Mocks",
+                //     "Full High-Yield Notes & Formula Library",
+                //     "Instant AI Tutor & Step-by-Step Rationales",
+                //     "Spaced repetition flashcards",
+                //     "Complete past papers with verified keys",
+                //     "Priority mentor doubt resolution"
+                //   ],
+                //   highlighted: true,
+                //   badge: "Most Popular"
+                // },
+                // {
+                //   id: "pro-1y",
+                //   title: "1-Year Complete Master",
+                //   priceNpr: 4499,
+                //   billingPeriod: "12 Months",
+                //   features: [
+                //     "All features in 6-Month Pro",
+                //     "Full access to all Target Exam categories",
+                //     "Offline download & export support",
+                //     "Exclusive high-yield PDF summaries",
+                //     "One-on-one rank guidance"
+                //   ],
+                //   highlighted: false,
+                //   badge: undefined
+                // }
               ]).map((plan, idx) => (
                 <div
                   key={plan.id || idx}

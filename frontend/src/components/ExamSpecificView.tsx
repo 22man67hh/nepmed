@@ -321,7 +321,7 @@ export default function ExamSpecificView({
         {sortedSets.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {sortedSets.map((set) => {
-              const isUnlocked = set.isFree || hasActiveSub || userProfile.purchasedSetIds.includes(set.id);
+              const isUnlocked = set.isFree === true || (set as any).is_free === true || (set as any).is_free === 1 || (set as any).is_free === "1" || hasActiveSub || userProfile.purchasedSetIds.includes(set.id);
               
               return (
                 <div 
@@ -421,8 +421,8 @@ export default function ExamSpecificView({
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {premiumPackages.map((pkg, index) => {
-                const isPopular = !!pkg.is_popular;
-                const isFree = !!pkg.is_free;
+                const isPopular = pkg.is_popular === true || pkg.is_popular === "1" || pkg.is_popular === 1;
+                const isFree = pkg.is_free === true || pkg.is_free === "1" || pkg.is_free === 1;
                 const priceDisplay = isFree ? "Free" : `Rs. ${pkg.price}`;
                 
                 // Colors based on index for variety

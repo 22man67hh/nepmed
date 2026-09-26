@@ -305,7 +305,7 @@ export default function LoginScreen({ onLoginSuccess, cmsContent, dbExams = [] }
             <Stethoscope className="w-8 h-8 text-slate-950" />
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-white font-sans">
-            {cmsContent?.loginLabels?.brandName || "nepmedmcq"}
+            {cmsContent?.loginLabels?.brandName || "PrepzaNepal"}
           </h1>
           <p className="text-slate-400 text-xs mt-1 text-center">
             {cmsContent?.loginLabels?.brandSubtitle || "Nepal's Premier Medical MCQs & License Prep Engine"}
@@ -460,7 +460,7 @@ export default function LoginScreen({ onLoginSuccess, cmsContent, dbExams = [] }
                   </span>
                   <input
                     type="email"
-                    placeholder="you@nepmedmcq.app"
+                    placeholder="you@PrepzaNepal.app"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2.5 pl-10 pr-4 text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500 text-xs transition-colors"
@@ -662,12 +662,12 @@ export default function LoginScreen({ onLoginSuccess, cmsContent, dbExams = [] }
               
               <h4 className="text-white font-bold font-sans">1. Acceptance of Terms</h4>
               <p>
-                By creating an account or accessing the NepMedMCQ Study Engine, you explicitly agree to bind yourself legally to these Terms and Conditions.
+                By creating an account or accessing the PrepzaNepal Study Engine, you explicitly agree to bind yourself legally to these Terms and Conditions.
               </p>
 
               <h4 className="text-white font-bold font-sans">2. Educational Purposes and Disclaimers</h4>
               <p>
-                NepMedMCQ is strictly an educational support system designed to help medical students prepare for board examinations (MEC-UG, MEC-PG, NMCLE, and Loksewa).
+                PrepzaNepal is strictly an educational support system designed to help medical students prepare for board examinations (MEC-UG, MEC-PG, NMCLE, and Loksewa).
               </p>
 
               <h4 className="text-white font-bold font-sans">3. Account Integrity & Verification</h4>

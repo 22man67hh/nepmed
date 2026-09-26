@@ -26,7 +26,7 @@ class QuestionController extends Controller
             $query->where('question_text', 'LIKE', '%' . $request->input('search') . '%');
         }
 
-        $perPage = $request->get('per_page', 40);
+        $perPage = $request->get('per_page', 20);
         $questions = $query->latest()->paginate($perPage);
 
         return response()->json([

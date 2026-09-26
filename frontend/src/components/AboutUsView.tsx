@@ -272,7 +272,7 @@ export default function AboutUsView({ userProfile, cmsContent }: AboutUsViewProp
                     value={ticketEmail} 
                     onChange={(e) => setTicketEmail(e.target.value)}
                     className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-white focus:outline-none focus:border-emerald-500"
-                    placeholder="you@nepmedmcq.app"
+                    placeholder="you@PrepzaNepal.app"
                   />
                 </div>
               </div>

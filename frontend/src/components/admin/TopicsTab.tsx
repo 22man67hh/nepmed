@@ -21,6 +21,41 @@ export const TopicsTab: React.FC<TopicsTabProps> = ({
   const [editingTopic, setEditingTopic] = useState<any | null>(null);
   const [topicForm, setTopicForm] = useState({ name: "", subject_id: "", weight: "0", icon: "tag" });
 
+  // Pagination States
+  const [paginatedTopics, setPaginatedTopics] = useState<any[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(false);
+
+  const fetchPaginatedTopics = async (page: number) => {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/topics?page=${page}&limit=20`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.status && data.topics) {
+          // Check if response is Laravel paginated format
+          if (data.topics.data) {
+            setPaginatedTopics(data.topics.data);
+            setCurrentPage(data.topics.current_page || 1);
+            setTotalPages(data.topics.last_page || 1);
+          } else if (Array.isArray(data.topics)) {
+            // Fallback if backend hasn't implemented pagination yet but returns array
+            setPaginatedTopics(data.topics);
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching paginated topics:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchPaginatedTopics(currentPage);
+  }, [currentPage]);
+
   const handleTopicSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!topicForm.name.trim() || !topicForm.subject_id) return;
@@ -41,6 +76,7 @@ export const TopicsTab: React.FC<TopicsTabProps> = ({
           const data = await res.json();
           if (data.status) {
             setMessage("Topic updated successfully in database!");
+            fetchPaginatedTopics(currentPage);
             fetchTopics();
           }
         }
@@ -59,6 +95,7 @@ export const TopicsTab: React.FC<TopicsTabProps> = ({
           const data = await res.json();
           if (data.status) {
             setMessage("Topic created successfully in database!");
+            fetchPaginatedTopics(currentPage);
             fetchTopics();
           }
         }
@@ -92,6 +129,7 @@ export const TopicsTab: React.FC<TopicsTabProps> = ({
         });
         if (res.ok) {
           setMessage("Topic deleted successfully from database!");
+          fetchPaginatedTopics(currentPage);
           fetchTopics();
         }
       } catch (error) {
@@ -122,68 +160,100 @@ export const TopicsTab: React.FC<TopicsTabProps> = ({
         </button>
       </div>
 
-      {dbTopics.length === 0 ? (
+      {paginatedTopics.length === 0 && !loading ? (
         <div className="bg-slate-900 border border-slate-800 border-dashed p-10 rounded-2xl text-center space-y-2">
           <AlertCircle className="w-8 h-8 text-slate-500 mx-auto" />
           <p className="text-xs text-slate-400">No topics registered in database.</p>
         </div>
       ) : (
-        <div className="bg-slate-900 border border-slate-800/80 rounded-2xl overflow-hidden shadow-lg overflow-x-auto">
-          <table className="w-full min-w-[700px] text-left border-collapse">
-            <thead>
-              <tr className="bg-slate-950 border-b border-slate-800 text-[10px] uppercase font-bold text-slate-400 tracking-wider">
-                <th className="py-4 px-6">Topic Name</th>
-                <th className="py-4 px-6">Parent Subject</th>
-                <th className="py-4 px-6">Exam Context</th>
-                <th className="py-4 px-6">Weight (%)</th>
-                <th className="py-4 px-6">Icon</th>
-                <th className="py-4 px-6 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800/60 text-xs">
-              {dbTopics.map((topic) => {
-                const parentSubject = dbSubjects.find(s => s.uuid === topic.subject_id);
-                const connectedExam = parentSubject ? dbExams.find(e => e.id === parentSubject.exam_id) : null;
-                return (
-                  <tr key={topic.id} className="hover:bg-slate-800/20 transition-colors">
-                    <td className="py-4 px-6 font-semibold text-white">
-                      🏷️ {topic.name}
-                    </td>
-                    <td className="py-4 px-6 text-slate-300">
-                      {parentSubject ? parentSubject.name : `Subject (UUID: ${topic.subject_id})`}
-                    </td>
-                    <td className="py-4 px-6 text-slate-400">
-                      {connectedExam ? connectedExam.name : "-"}
-                    </td>
-                    <td className="py-4 px-6 font-mono text-slate-300">
-                      {topic.weight || 0}%
-                    </td>
-                    <td className="py-4 px-6 font-mono text-slate-500">
-                      {topic.icon || "tag"}
-                    </td>
-                    <td className="py-4 px-6 text-right">
-                      <div className="flex gap-2 justify-end">
-                        <button
-                          type="button"
-                          onClick={() => handleEditTopicClick(topic)}
-                          className="p-1.5 bg-slate-800 hover:bg-slate-750 text-slate-300 rounded-lg transition-colors cursor-pointer"
-                        >
-                          <Edit3 className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteTopic(topic.id)}
-                          className="p-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-lg transition-colors cursor-pointer"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+        <div className="bg-slate-900 border border-slate-800/80 rounded-2xl overflow-hidden shadow-lg overflow-x-auto flex flex-col">
+          <div className="relative">
+            {loading && (
+              <div className="absolute inset-0 bg-slate-950/50 backdrop-blur-sm z-10 flex items-center justify-center">
+                <div className="w-6 h-6 border-2 border-violet-500 border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            )}
+            <table className="w-full min-w-[700px] text-left border-collapse">
+              <thead>
+                <tr className="bg-slate-950 border-b border-slate-800 text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                  <th className="py-4 px-6">Topic Name</th>
+                  <th className="py-4 px-6">Parent Subject</th>
+                  <th className="py-4 px-6">Exam Context</th>
+                  <th className="py-4 px-6">Weight (%)</th>
+                  <th className="py-4 px-6">Icon</th>
+                  <th className="py-4 px-6 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800/60 text-xs">
+                {paginatedTopics.map((topic) => {
+                  const parentSubject = dbSubjects.find(s => s.uuid === topic.subject_id);
+                  const connectedExam = parentSubject ? dbExams.find(e => e.id === parentSubject.exam_id) : null;
+                  return (
+                    <tr key={topic.id} className="hover:bg-slate-800/20 transition-colors">
+                      <td className="py-4 px-6 font-semibold text-white">
+                        🏷️ {topic.name}
+                      </td>
+                      <td className="py-4 px-6 text-slate-300">
+                        {parentSubject ? parentSubject.name : `Subject (UUID: ${topic.subject_id})`}
+                      </td>
+                      <td className="py-4 px-6 text-slate-400">
+                        {connectedExam ? connectedExam.name : "-"}
+                      </td>
+                      <td className="py-4 px-6 font-mono text-slate-300">
+                        {topic.weight || 0}%
+                      </td>
+                      <td className="py-4 px-6 font-mono text-slate-500">
+                        {topic.icon || "tag"}
+                      </td>
+                      <td className="py-4 px-6 text-right">
+                        <div className="flex gap-2 justify-end">
+                          <button
+                            type="button"
+                            onClick={() => handleEditTopicClick(topic)}
+                            className="p-1.5 bg-slate-800 hover:bg-slate-750 text-slate-300 rounded-lg transition-colors cursor-pointer"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteTopic(topic.id)}
+                            className="p-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-lg transition-colors cursor-pointer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="p-4 border-t border-slate-800/60 flex items-center justify-between text-xs bg-slate-900/50">
+              <span className="text-slate-400">
+                Page <strong className="text-white">{currentPage}</strong> of <strong className="text-white">{totalPages}</strong>
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  disabled={currentPage <= 1 || loading}
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
+                >
+                  Previous
+                </button>
+                <button
+                  disabled={currentPage >= totalPages || loading}
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

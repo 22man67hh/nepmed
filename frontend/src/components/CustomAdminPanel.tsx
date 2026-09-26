@@ -50,7 +50,7 @@ import {
 import { QuestionSet, Question } from "../types";
 import { generateQuestionIdForSubject, retagAllQuestions } from "../subjectsData";
 import RichTextEditor from "./RichTextEditor";
-import { CmsControlPanel } from "./CmsControlPanel";
+import { PagesManagerTab } from "./admin/PagesManagerTab";
 
 // Modular Subcomponents Imports
 import { DashboardTab } from "./admin/DashboardTab";
@@ -420,7 +420,7 @@ export default function CustomAdminPanel({
   // CMS state bindings
   const [cmsBrandName, setCmsBrandName] = useState("");
   const [cmsLoginLabels, setCmsLoginLabels] = useState<any>({
-    brandName: "nepmedmcq",
+    brandName: "PrepzaNepal",
     brandSubtitle: "Nepal's Premier Medical MCQs & License Prep Engine",
     signupGoogleButton: "Sign Up with Google",
     signinGoogleButton: "Sign In with Google",
@@ -531,8 +531,12 @@ export default function CustomAdminPanel({
       const res = await fetch("/api/topics");
       if (res.ok) {
         const data = await res.json();
-        if (data.status && Array.isArray(data.topics)) {
-          setDbTopics(data.topics);
+        if (data.status && data.topics) {
+          if (Array.isArray(data.topics)) {
+            setDbTopics(data.topics);
+          } else if (Array.isArray(data.topics.data)) {
+            setDbTopics(data.topics.data);
+          }
         }
       }
     } catch (e) {
@@ -1674,7 +1678,7 @@ export default function CustomAdminPanel({
               {/* Hide this div when collapsed */}
               {!isSidebarCollapsed && (
                 <div>
-                  <h2 className="font-bold text-sm text-white uppercase tracking-wider">{cmsBrandName || "nepmedmcq"}</h2>
+                  <h2 className="font-bold text-sm text-white uppercase tracking-wider">{cmsBrandName || "PrepzaNepal"}</h2>
                   <span className="text-[10px] text-violet-400 font-semibold tracking-widest uppercase">Admin Panel</span>
                 </div>
               )}
@@ -1807,7 +1811,7 @@ export default function CustomAdminPanel({
               <span className={`${isSidebarCollapsed ? "hidden md:hidden" : "block"}`}>User Flagged Issues</span>
             </button>
 
-            {/* <button
+            <button
               type="button"
               onClick={() => { setAdminTab("cms"); setIsMobileMenuOpen(false); }}
               className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${adminTab === "cms"
@@ -1816,8 +1820,8 @@ export default function CustomAdminPanel({
                 }`}
             >
               <Settings className="w-4 h-4 text-violet-400 shrink-0" />
-              <span className={`${isSidebarCollapsed ? "hidden md:hidden" : "block"}`}>CMS Configs</span>
-            </button> */}
+              <span className={`${isSidebarCollapsed ? "hidden md:hidden" : "block"}`}>Pages</span>
+            </button>
           </nav>
         </div>
 
@@ -1871,7 +1875,7 @@ export default function CustomAdminPanel({
               {adminTab === "exams" && "🎓 Target Board Exams"}
               {adminTab === "subjects" && "📚 Subjects Directory"}
               {adminTab === "topics" && "🏷️ Topics Directory"}
-              {adminTab === "cms" && "⚙️ Visual CMS Control Room"}
+              {adminTab === "cms" && "⚙️ Pages & Dynamic Config"}
               {adminTab === "packages" && "💎 Premium Packages"}
             </h2>
           </div>
@@ -2021,50 +2025,7 @@ export default function CustomAdminPanel({
           )}
 
           {adminTab === "cms" && (
-            <CmsControlPanel
-              cmsBrandName={cmsBrandName}
-              setCmsBrandName={setCmsBrandName}
-              cmsLoginLabels={cmsLoginLabels}
-              setCmsLoginLabels={setCmsLoginLabels}
-              cmsAboutTitle={cmsAboutTitle}
-              setCmsAboutTitle={setCmsAboutTitle}
-              cmsAboutSubtitle={cmsAboutSubtitle}
-              setCmsAboutSubtitle={setCmsAboutSubtitle}
-              cmsAboutBody={cmsAboutBody}
-              setCmsAboutBody={setCmsAboutBody}
-              cmsSidebarItems={cmsSidebarItems}
-              setCmsSidebarItems={setCmsSidebarItems}
-              cmsLeaderboardConfig={cmsLeaderboardConfig}
-              setCmsLeaderboardConfig={setCmsLeaderboardConfig}
-              cmsMecUgClassification={cmsMecUgClassification}
-              setCmsMecUgClassification={setCmsMecUgClassification}
-              cmsMecPgClassification={cmsMecPgClassification}
-              setCmsMecPgClassification={setCmsMecPgClassification}
-              cmsEditorialTeam={cmsEditorialTeam}
-              setCmsEditorialTeam={setCmsEditorialTeam}
-              cmsDashboardConfig={cmsDashboardConfig}
-              setCmsDashboardConfig={setCmsDashboardConfig}
-              cmsSavedQuestionsConfig={cmsSavedQuestionsConfig}
-              setCmsSavedQuestionsConfig={setCmsSavedQuestionsConfig}
-              cmsMyReportConfig={cmsMyReportConfig}
-              setCmsMyReportConfig={setCmsMyReportConfig}
-              cmsDiscussionForumConfig={cmsDiscussionForumConfig}
-              setCmsDiscussionForumConfig={setCmsDiscussionForumConfig}
-              cmsSupportConfig={cmsSupportConfig}
-              setCmsSupportConfig={setCmsSupportConfig}
-              cmsPricingConfig={cmsPricingConfig}
-              setCmsPricingConfig={setCmsPricingConfig}
-              cmsButtonStyles={cmsButtonStyles}
-              setCmsButtonStyles={setCmsButtonStyles}
-              cmsTargetExams={cmsTargetExams}
-              setCmsTargetExams={setCmsTargetExams}
-              cmsSubscriptionConfig={cmsSubscriptionConfig}
-              setCmsSubscriptionConfig={setCmsSubscriptionConfig}
-              cmsReferEarnConfig={cmsReferEarnConfig}
-              setCmsReferEarnConfig={setCmsReferEarnConfig}
-              handleSaveCMS={handleSaveCMS}
-              isSavingCms={false}
-            />
+            <PagesManagerTab />
           )}
         </div>
       </main>

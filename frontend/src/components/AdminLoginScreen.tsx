@@ -164,7 +164,7 @@ export default function AdminLoginScreen({ onLoginSuccess }: AdminLoginScreenPro
         </form>
 
         <div className="pt-2 text-center text-[10px] text-slate-500 font-sans">
-          <p>© {new Date().getFullYear()} NepMedMCQ Editorial Board. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} PrepzaNepal Editorial Board. All rights reserved.</p>
         </div>
       </div>
     </div>

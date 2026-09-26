@@ -49,7 +49,7 @@ import ReferEarnView from "./components/ReferEarnView";
 import AdminLoginScreen from "./components/AdminLoginScreen";
 
 const INITIAL_CMS_CONTENT: CMSContent = {
-  brandName: "nepmedmcq",
+  brandName: "PrepzaNepal",
   sidebarLabels: {
     dashboard: "Dashboard",
     set_practice: "Set wise Practice",
@@ -80,15 +80,15 @@ const INITIAL_CMS_CONTENT: CMSContent = {
     "loksewa": "Public Service Commission (Loksewa Aayog) General Medical Officer and Healthcare Services exams."
   },
   aboutUsLabels: {
-    heroTitle: "About nepmedmcq Editorial Board",
-    heroDescription: "NepMedMCQ is Nepal's premier full-stack interactive medical education engine. We are dedicated to providing high-yield multiple choice test questions, detailed clinical rationales, and memory mnemonics meticulously aligned with the standards of the Medical Education Commission (MEC) and the Nepal Medical Council (NMC) licensing examinations.",
+    heroTitle: "About PrepzaNepal Editorial Board",
+    heroDescription: "PrepzaNepal is Nepal's premier full-stack interactive medical education engine. We are dedicated to providing high-yield multiple choice test questions, detailed clinical rationales, and memory mnemonics meticulously aligned with the standards of the Medical Education Commission (MEC) and the Nepal Medical Council (NMC) licensing examinations.",
     teamTitle: "Our Eminent Editorial Board",
     contactTitle: "Official Contact Details",
     contactDescription: "If you have institutional registration queries, partnership opportunities, or feedback regarding NMCLE syllabus coverage, reach us directly or visit our office.",
     officeTitle: "Our Office Address",
     officeText: "Maharajgunj Clinical Complex\nOpposite Teaching Hospital (IOM)\nKathmandu 44600, Nepal",
     emailTitle: "Email Addresses",
-    emailText: "Editorial: info@nepmedmcq.edu.np\nSupport: support@nepmedmcq.edu.np",
+    emailText: "Editorial: info@PrepzaNepal.edu.np\nSupport: support@PrepzaNepal.edu.np",
     phoneTitle: "Phone & Support Hours",
     phoneText: "Landline: +977-1-4412345\nCell: +977-98510-00000\nSun - Fri, 9:00 AM - 5:00 PM (NST)"
   },
@@ -142,7 +142,7 @@ const INITIAL_CMS_CONTENT: CMSContent = {
     }
   ],
   loginLabels: {
-    brandName: "nepmedmcq",
+    brandName: "PrepzaNepal",
     brandSubtitle: "Nepal's Premier Medical MCQs & License Prep Engine",
     signupGoogleButton: "Sign Up with Google",
     signinGoogleButton: "Sign In with Google",
@@ -183,10 +183,10 @@ const INITIAL_CMS_CONTENT: CMSContent = {
   },
   referEarnConfig: {
     title: "Refer Friends, Earn Cash & Points!",
-    subtitle: "Invite other medical students/doctors to NepMedMCQ. Get rewarded instantly upon registration and subscription purchase.",
+    subtitle: "Invite other medical students/doctors to PrepzaNepal. Get rewarded instantly upon registration and subscription purchase.",
     pointsPerReg: 50,
     pointsPerSub: 500,
-    promoMessage: "Hey! Check out NepMedMCQ, Nepal's best app for MECEE and Licensing MCQs. Use my code to register and get bonus access!",
+    promoMessage: "Hey! Check out PrepzaNepal, Nepal's best app for MECEE and Licensing MCQs. Use my code to register and get bonus access!",
     rules: [
       "Share your unique custom referral link or code with friends.",
       "Get 50 points as soon as they register their verified account.",
@@ -336,14 +336,42 @@ export default function App() {
 
   // Fetch dynamic CMS content configuration and sets
   useEffect(() => {
+    // Fetch base CMS config
     fetch("/api/cms/content")
       .then(res => res.json())
       .then(data => {
         if (data && data.brandName) {
-          setCmsContent(data);
+          setCmsContent(prev => ({ ...prev, ...data }));
         }
       })
-      .catch(err => console.error("Failed to load CMS content:", err));
+      .catch(err => console.error("Failed to load base CMS content:", err));
+
+    // Fetch dynamic database pages to override UI text (landing page, dashboard)
+    fetch("/api/pages")
+      .then(res => res.json())
+      .then(data => {
+        let pagesArr: any[] = [];
+        if (Array.isArray(data)) pagesArr = data;
+        else if (data && Array.isArray(data.data)) pagesArr = data.data;
+        else if (data && Array.isArray(data.pages)) pagesArr = data.pages;
+
+        if (pagesArr.length > 0) {
+          setCmsContent(prev => {
+            let next = { ...prev };
+            const landingPage = pagesArr.find(p => p.slug === 'landing-page');
+            const dashboardPage = pagesArr.find(p => p.slug === 'user-dashboard');
+            
+            if (landingPage && landingPage.content) {
+              next = { ...next, ...landingPage.content };
+            }
+            if (dashboardPage && dashboardPage.content) {
+              next = { ...next, ...dashboardPage.content };
+            }
+            return next;
+          });
+        }
+      })
+      .catch(err => console.error("Failed to load dynamic pages config:", err));
 
     // Fetch question sets from real DB endpoint (paginated, load all pages)
     const loadAllSets = async (examsData?: any[]) => {
@@ -372,7 +400,7 @@ export default function App() {
               examType: examSlug,
               type: s.type || "mock-test",
               yearOrDate: s.year_or_date || s.yearOrDate || "",
-              isFree: !!s.is_free,
+              isFree: s.is_free === true || s.is_free === 1 || s.is_free === "1",
               price: parseFloat(s.price) || 0,
               durationMinutes: parseInt(s.duration_minutes) || 60,
               province: s.province || "all",
@@ -470,7 +498,7 @@ export default function App() {
           (window as any).__dbExams = data.exams;
           // Now load sets using exam data for proper slug mapping
           loadAllSets(data.exams);
-          console.log(data.exams)
+          // console.log(data.exams)
         } else {
           loadAllSets([]);
         }
@@ -493,8 +521,13 @@ export default function App() {
     fetch("/api/topics")
       .then(res => res.json())
       .then(data => {
-        if (data && data.status && Array.isArray(data.topics)) {
-          setDbTopics(data.topics);
+        if (data && data.status && data.topics) {
+          if (Array.isArray(data.topics)) {
+            setDbTopics(data.topics);
+          } else if (Array.isArray(data.topics.data)) {
+            // Note: If paginated globally, this will only load the first page for the rest of the app!
+            setDbTopics(data.topics.data);
+          }
         }
       })
       .catch(err => console.error("Failed to load topics:", err));
@@ -943,7 +976,7 @@ export default function App() {
                   title: s.title,
                   examType: exam.id,
                   type: s.type || "mock-test",
-                  isFree: !!s.isFree,
+                  isFree: s.isFree === true || s.isFree === "1" || s.isFree === 1 || (s as any).is_free === true || (s as any).is_free === "1" || (s as any).is_free === 1,
                   price: s.price || 0,
                   durationMinutes: s.durationMinutes || 60,
                   yearOrDate: s.yearOrDate || "2026",
@@ -1020,7 +1053,7 @@ export default function App() {
       localStorage.setItem("nepmed_question_sets", JSON.stringify(updatedSets));
       localStorage.setItem("nepmed_independent_questions", JSON.stringify(updatedIndependent));
       localStorage.setItem("nepmed_id_system_migrated_v3", "true");
-      console.log("������ Pre-existing database questions successfully auto-migrated & retagged!");
+      // console.log("������ Pre-existing database questions successfully auto-migrated & retagged!");
     }
   }, [allSets, independentQuestions]);
 
@@ -1459,6 +1492,8 @@ export default function App() {
         dbExams={dbExams}
         dbPackages={dbPackages}
         dbTeams={dbTeams}
+        dbSubjects={dbSubjects}
+        dbTopics={dbTopics}
         allSets={allSets}
         onLoginClick={() => setActiveScreen("login")}
         onSignUpClick={() => setActiveScreen("login")}
@@ -1806,7 +1841,7 @@ export default function App() {
           {/* Elegant small copyright reserve centered footer */}
           <footer className="mt-12 pt-6 border-t border-slate-900/60 text-center pb-4">
             <p className="text-[10px] text-slate-500 font-sans tracking-wide">
-              © 2026 NepMedMCQ Study Engine. All rights reserved.
+              © 2026 PrepzaNepal Study Engine. All rights reserved.
             </p>
           </footer>
         </div>

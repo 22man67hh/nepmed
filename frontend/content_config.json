@@ -1,5 +1,5 @@
 {
-  "brandName": "nepmedmcq",
+  "brandName": "PrepzaNepal",
   "sidebarLabels": {
     "dashboard": "Dashboard",
     "set_practice": "Set wise Practice",
@@ -30,15 +30,15 @@
     "loksewa": "Public Service Commission (Loksewa Aayog) General Medical Officer and Healthcare Services exams."
   },
   "aboutUsLabels": {
-    "heroTitle": "About nepmedmcq Editorial Board",
-    "heroDescription": "NepMedMCQ is Nepal's premier full-stack interactive medical education engine. We are dedicated to providing high-yield multiple choice test questions, detailed clinical rationales, and memory mnemonics meticulously aligned with the standards of the Medical Education Commission (MEC) and the Nepal Medical Council (NMC) licensing examinations.",
+    "heroTitle": "About PrepzaNepal Editorial Board",
+    "heroDescription": "PrepzaNepal is Nepal's premier full-stack interactive medical education engine. We are dedicated to providing high-yield multiple choice test questions, detailed clinical rationales, and memory mnemonics meticulously aligned with the standards of the Medical Education Commission (MEC) and the Nepal Medical Council (NMC) licensing examinations.",
     "teamTitle": "Our Eminent Editorial Board",
     "contactTitle": "Official Contact Details",
     "contactDescription": "If you have institutional registration queries, partnership opportunities, or feedback regarding NMCLE syllabus coverage, reach us directly or visit our office.",
     "officeTitle": "Our Office Address",
     "officeText": "Maharajgunj Clinical Complex\nOpposite Teaching Hospital (IOM)\nKathmandu 44600, Nepal",
     "emailTitle": "Email Addresses",
-    "emailText": "Editorial: info@nepmedmcq.edu.np\nSupport: support@nepmedmcq.edu.np",
+    "emailText": "Editorial: info@PrepzaNepal.edu.np\nSupport: support@PrepzaNepal.edu.np",
     "phoneTitle": "Phone & Support Hours",
     "phoneText": "Landline: +977-1-4412345\nCell: +977-98510-00000\nSun - Fri, 9:00 AM - 5:00 PM (NST)"
   },
@@ -92,7 +92,7 @@
     }
   ],
   "loginLabels": {
-    "brandName": "nepmedmcq",
+    "brandName": "PrepzaNepal",
     "brandSubtitle": "Nepal's Premier Medical MCQs & License Prep Engine",
     "signupGoogleButton": "Sign Up with Google",
     "signinGoogleButton": "Sign In with Google",
@@ -190,10 +190,10 @@
   },
   "referEarnConfig": {
     "title": "Refer Friends, Earn Cash & Points!",
-    "subtitle": "Invite other medical students/doctors to NepMedMCQ. Get rewarded instantly upon registration and subscription purchase.",
+    "subtitle": "Invite other medical students/doctors to PrepzaNepal. Get rewarded instantly upon registration and subscription purchase.",
     "pointsPerReg": 50,
     "pointsPerSub": 500,
-    "promoMessage": "Hey! Check out NepMedMCQ, Nepal's best app for MECEE and Licensing MCQs. Use my code to register and get bonus access!",
+    "promoMessage": "Hey! Check out PrepzaNepal, Nepal's best app for MECEE and Licensing MCQs. Use my code to register and get bonus access!",
     "rules": [
       "Share your unique custom referral link or code with friends.",
       "Get 50 points as soon as they register their verified account.",

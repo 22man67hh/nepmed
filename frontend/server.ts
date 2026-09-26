@@ -130,7 +130,7 @@ const DEFAULT_FORUM_THREADS: ForumThread[] = [
 ];
 
 const DEFAULT_CMS_CONTENT = {
-  brandName: "nepmedmcq",
+  brandName: "PrepzaNepal",
   sidebarLabels: {
     dashboard: "Dashboard",
     set_practice: "Set wise Practice",
@@ -182,7 +182,9 @@ const proxyPrefixes = [
   "/api/payment",
   "/api/question-attempts",
   "/api/leaderboard",
-  "/api/my-history"
+  "/api/my-history",
+  "/api/pages",
+  "/api/teams"
 ];
 
 // Configure reverse proxy using http-proxy-middleware

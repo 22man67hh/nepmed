@@ -31,10 +31,10 @@ export default function ReferEarnView({
   // Use CMS config with beautiful default fallback values
   const referConfig = cmsContent.referEarnConfig || {
     title: "Refer Friends, Earn Cash & Points!",
-    subtitle: "Invite other medical students/doctors to NepMedMCQ. Get rewarded instantly upon registration and subscription purchase.",
+    subtitle: "Invite other medical students/doctors to PrepzaNepal. Get rewarded instantly upon registration and subscription purchase.",
     pointsPerReg: 50,
     pointsPerSub: 500,
-    promoMessage: "Hey! Check out NepMedMCQ, Nepal's best app for MECEE and Licensing MCQs. Use my code to register and get bonus access!",
+    promoMessage: "Hey! Check out PrepzaNepal, Nepal's best app for MECEE and Licensing MCQs. Use my code to register and get bonus access!",
     rules: [
       "Share your unique custom referral link or code with friends.",
       "Get 50 points as soon as they register their verified account.",
@@ -81,7 +81,7 @@ export default function ReferEarnView({
   const pointsBalance = userProfile.rewardPoints ?? 100;
   const referLogs = userProfile.referLog || [];
 
-  const shareLink = `https://nepmedmcq.edu.np/register?ref=${referralCode}`;
+  const shareLink = `https://PrepzaNepal.edu.np/register?ref=${referralCode}`;
 
   const handleCopyCode = () => {
     navigator.clipboard.writeText(referralCode);

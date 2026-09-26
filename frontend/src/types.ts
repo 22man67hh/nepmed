@@ -89,7 +89,7 @@ export interface UserProfile {
 }
 
 export interface CMSContent {
-  subscriptionPlans?: any[];
+
   brandName: string;
   sidebarLabels: {
     dashboard: string;
@@ -136,8 +136,18 @@ export interface CMSContent {
     avatar: string;
     specialty: string;
     enabled?: boolean;
+    badge?: string;
+    bio?: string;
+    isFounder?: boolean;
+    tags?: string[];
+    socialLinks?: {
+      facebook?: string;
+      twitter?: string;
+      linkedin?: string;
+      email?: string;
+    };
   }[];
-  subscriptionPlans: {
+  subscriptionPlans?: {
     id: string;
     days: number;
     tag: string;

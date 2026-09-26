@@ -340,7 +340,7 @@ export default function AdminPanel({
   // CMS state bindings
   const [cmsBrandName, setCmsBrandName] = useState("");
   const [cmsLoginLabels, setCmsLoginLabels] = useState<any>({
-    brandName: "nepmedmcq",
+    brandName: "PrepzaNepal",
     brandSubtitle: "Nepal's Premier Medical MCQs & License Prep Engine",
     signupGoogleButton: "Sign Up with Google",
     signinGoogleButton: "Sign In with Google",
@@ -419,7 +419,7 @@ export default function AdminPanel({
   });
 
   const [cmsSupportConfig, setCmsSupportConfig] = useState<any>({
-    supportEmail: "support@nepmedmcq.edu.np",
+    supportEmail: "support@PrepzaNepal.edu.np",
     phone: "+977-1-4412345",
     hours: "Sun - Fri, 9:00 AM - 5:00 PM (NST)",
     categories: [
@@ -453,10 +453,10 @@ export default function AdminPanel({
 
   const [cmsReferEarnConfig, setCmsReferEarnConfig] = useState<any>({
     title: "Refer Friends, Earn Cash & Points!",
-    subtitle: "Invite other medical students/doctors to NepMedMCQ. Get rewarded instantly upon registration and subscription purchase.",
+    subtitle: "Invite other medical students/doctors to PrepzaNepal. Get rewarded instantly upon registration and subscription purchase.",
     pointsPerReg: 50,
     pointsPerSub: 500,
-    promoMessage: "Hey! Check out NepMedMCQ, Nepal's best app for MECEE and Licensing MCQs. Use my code to register and get bonus access!",
+    promoMessage: "Hey! Check out PrepzaNepal, Nepal's best app for MECEE and Licensing MCQs. Use my code to register and get bonus access!",
     rules: [
       "Share your unique custom referral link or code with friends.",
       "Get 50 points as soon as they register their verified account.",
