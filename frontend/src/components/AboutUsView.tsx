@@ -142,7 +142,7 @@ export default function AboutUsView({ userProfile, cmsContent, dbTeams = [] }: A
     <div id="about-us-container" className="space-y-8 animate-in fade-in duration-200">
       
       {/* Hero Header */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 flex flex-col md:flex-row items-center gap-6 shadow-xl relative overflow-hidden">
+      <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 md:p-8 flex flex-col md:flex-row items-center gap-6 shadow-sm relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-2xl pointer-events-none" />
         
         <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-2xl shrink-0">
@@ -170,7 +170,7 @@ export default function AboutUsView({ userProfile, cmsContent, dbTeams = [] }: A
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {teamList.map((member, i) => (
-              <div key={i} className="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col items-center text-center hover:border-slate-700/80 transition-colors">
+              <div key={i} className="bg-slate-800 border border-slate-700 p-5 rounded-2xl flex flex-col items-center text-center hover:border-slate-700/80 transition-colors">
                 <img 
                   src={member.avatar} 
                   alt={member.name}
@@ -179,7 +179,7 @@ export default function AboutUsView({ userProfile, cmsContent, dbTeams = [] }: A
                 />
                 <h4 className="text-sm font-bold text-white leading-snug">{member.name}</h4>
                 <p className="text-[11px] text-emerald-400 font-medium mt-1">{member.role}</p>
-                <p className="text-[10px] text-slate-400 mt-1.5 leading-normal">{member.institution}</p>
+                <p className="text-[10px] text-slate-300 mt-1.5 leading-normal">{member.institution}</p>
                 <div className="mt-3.5 pt-2 border-t border-slate-800/80 w-full">
                   <p className="text-[9px] uppercase font-bold text-slate-500 tracking-wider">Expertise</p>
                   <p className="text-[10px] text-slate-300 font-mono mt-1 font-sans">{member.specialty}</p>
@@ -189,12 +189,12 @@ export default function AboutUsView({ userProfile, cmsContent, dbTeams = [] }: A
           </div>
 
           {/* Contact Coordinates */}
-          <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-4">
+          <div className="bg-slate-800 border border-slate-700 p-6 rounded-2xl space-y-4">
             <h4 className="text-sm font-bold text-white flex items-center gap-2">
               <MapPin className="w-4 h-4 text-emerald-400" />
               <span>{labels.contactTitle}</span>
             </h4>
-            <p className="text-xs text-slate-400 leading-relaxed">
+            <p className="text-xs text-slate-300 leading-relaxed">
               {labels.contactDescription}
             </p>
 
@@ -203,7 +203,7 @@ export default function AboutUsView({ userProfile, cmsContent, dbTeams = [] }: A
                 <MapPin className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
                 <div>
                   <p className="font-semibold text-slate-200">{labels.officeTitle}</p>
-                  <p className="text-slate-400 mt-0.5 leading-relaxed text-[11px] whitespace-pre-wrap">
+                  <p className="text-slate-300 mt-0.5 leading-relaxed text-[11px] whitespace-pre-wrap">
                     {labels.officeText}
                   </p>
                 </div>
@@ -213,7 +213,7 @@ export default function AboutUsView({ userProfile, cmsContent, dbTeams = [] }: A
                 <Mail className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
                 <div>
                   <p className="font-semibold text-slate-200">{labels.emailTitle}</p>
-                  <p className="text-slate-400 mt-0.5 text-[11px] whitespace-pre-wrap leading-relaxed">
+                  <p className="text-slate-300 mt-0.5 text-[11px] whitespace-pre-wrap leading-relaxed">
                     {labels.emailText}
                   </p>
                 </div>
@@ -223,7 +223,7 @@ export default function AboutUsView({ userProfile, cmsContent, dbTeams = [] }: A
                 <Phone className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
                 <div>
                   <p className="font-semibold text-slate-200">{labels.phoneTitle}</p>
-                  <p className="text-slate-400 mt-0.5 leading-relaxed text-[11px] whitespace-pre-wrap">
+                  <p className="text-slate-300 mt-0.5 leading-relaxed text-[11px] whitespace-pre-wrap">
                     {labels.phoneText}
                   </p>
                 </div>
@@ -239,10 +239,10 @@ export default function AboutUsView({ userProfile, cmsContent, dbTeams = [] }: A
             <h3 className="text-base font-bold text-white">Send Us Message / Open Support Ticket</h3>
           </div>
 
-          <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-5">
+          <div className="bg-slate-800 border border-slate-700 p-6 rounded-2xl space-y-5">
             <div className="border-b border-slate-800 pb-3">
-              <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Inquiry Ticket Dispatch</h4>
-              <p className="text-xs text-slate-400 mt-1 leading-normal">
+              <h4 className="text-xs font-bold text-slate-300 uppercase tracking-widest">Inquiry Ticket Dispatch</h4>
+              <p className="text-xs text-slate-300 mt-1 leading-normal">
                 Open a ticket directly to our database. Our editors will review and resolve technical or syllabus questions.
               </p>
             </div>
@@ -264,7 +264,7 @@ export default function AboutUsView({ userProfile, cmsContent, dbTeams = [] }: A
             <form onSubmit={handleTicketSubmit} className="space-y-4 text-xs">
               <div className="grid grid-cols-2 gap-3.5">
                 <div>
-                  <label className="block text-slate-400 font-semibold mb-1">Your Name</label>
+                  <label className="block text-slate-300 font-semibold mb-1">Your Name</label>
                   <input 
                     type="text" 
                     value={ticketName} 
@@ -274,7 +274,7 @@ export default function AboutUsView({ userProfile, cmsContent, dbTeams = [] }: A
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-400 font-semibold mb-1">Your Email</label>
+                  <label className="block text-slate-300 font-semibold mb-1">Your Email</label>
                   <input 
                     type="email" 
                     value={ticketEmail} 
@@ -287,7 +287,7 @@ export default function AboutUsView({ userProfile, cmsContent, dbTeams = [] }: A
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
-                  <label className="block text-slate-400 font-semibold mb-1">Inquiry Topic Category</label>
+                  <label className="block text-slate-300 font-semibold mb-1">Inquiry Topic Category</label>
                   <select 
                     value={ticketCategory} 
                     onChange={(e) => setTicketCategory(e.target.value)}
@@ -301,7 +301,7 @@ export default function AboutUsView({ userProfile, cmsContent, dbTeams = [] }: A
                   </select>
                 </div>
                 <div>
-                  <label className="block text-slate-400 font-semibold mb-1">Subject</label>
+                  <label className="block text-slate-300 font-semibold mb-1">Subject</label>
                   <input 
                     type="text" 
                     value={ticketSubject} 
@@ -313,7 +313,7 @@ export default function AboutUsView({ userProfile, cmsContent, dbTeams = [] }: A
               </div>
 
               <div>
-                <label className="block text-slate-400 font-semibold mb-1">Describe Your Message / Issue Detail</label>
+                <label className="block text-slate-300 font-semibold mb-1">Describe Your Message / Issue Detail</label>
                 <textarea 
                   rows={4} 
                   value={ticketMessage} 
@@ -326,7 +326,7 @@ export default function AboutUsView({ userProfile, cmsContent, dbTeams = [] }: A
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg shadow-emerald-500/15 disabled:opacity-50"
+                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm disabled:opacity-50"
               >
                 {isSubmitting ? (
                   <span className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
@@ -341,7 +341,7 @@ export default function AboutUsView({ userProfile, cmsContent, dbTeams = [] }: A
           </div>
 
           {/* MY TICKETS MONITOR SECTION */}
-          <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-4">
+          <div className="bg-slate-800 border border-slate-700 p-6 rounded-2xl space-y-4">
             <div className="flex justify-between items-center border-b border-slate-800 pb-3">
               <div>
                 <h4 className="text-xs font-bold text-white flex items-center gap-2">
@@ -355,7 +355,7 @@ export default function AboutUsView({ userProfile, cmsContent, dbTeams = [] }: A
               <button 
                 onClick={fetchTickets}
                 disabled={loadingTickets}
-                className="p-1.5 bg-slate-950 border border-slate-800 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition-all cursor-pointer disabled:opacity-50"
+                className="p-1.5 bg-slate-950 border border-slate-800 rounded-lg hover:bg-slate-800 text-slate-300 hover:text-white transition-all cursor-pointer disabled:opacity-50"
                 title="Refresh Tickets"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${loadingTickets ? "animate-spin" : ""}`} />
@@ -382,7 +382,7 @@ export default function AboutUsView({ userProfile, cmsContent, dbTeams = [] }: A
                         {t.status}
                       </span>
                     </div>
-                    <p className="text-[10px] text-slate-400 line-clamp-2 leading-relaxed">{t.message}</p>
+                    <p className="text-[10px] text-slate-300 line-clamp-2 leading-relaxed">{t.message}</p>
                     <div className="flex justify-between items-center text-[9px] text-slate-500 pt-1.5 border-t border-slate-800/40">
                       <span>Cat: {t.category}</span>
                       <span>{new Date(t.createdAt).toLocaleDateString()}</span>

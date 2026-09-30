@@ -125,7 +125,7 @@ export default function DashboardView({
       
       {/* Target Exam Greeting Header */}
       {targetExam === "loksewa" ? (
-        <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-xl space-y-6">
+        <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-sm space-y-6">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
               <span className="text-emerald-400 font-semibold text-xs tracking-wider uppercase block mb-1">
@@ -171,15 +171,15 @@ export default function DashboardView({
           </div>
         </div>
       ) : (
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-gradient-to-r from-slate-900 via-slate-900 to-emerald-950/20 p-6 rounded-2xl border border-slate-800 shadow-xl">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-sm">
           <div>
-            <span className="text-emerald-400 font-semibold text-xs tracking-wider uppercase block mb-1">
+            <span className="text-emerald-500 font-semibold text-xs tracking-wider uppercase block mb-1">
               {cmsContent.dashboardLabels.preparingFor}
             </span>
             <h2 className="text-2xl font-bold text-white tracking-tight">
               {examLabels[targetExam] || targetExam.toUpperCase()}
             </h2>
-            <p className="text-slate-400 text-sm mt-1">
+            <p className="text-slate-300 text-sm mt-1">
               {examSets.length} {cmsContent.dashboardLabels.papersAvailable}
             </p>
           </div>
@@ -191,62 +191,60 @@ export default function DashboardView({
         {/* Set-wise Practice Card */}
         <div 
           onClick={onSelectExamPage}
-          className="relative overflow-hidden bg-slate-900 border border-slate-800/80 p-6 rounded-2xl shadow-xl hover:border-emerald-500/40 hover:shadow-emerald-500/5 transition-all group cursor-pointer flex flex-col justify-between"
+          className="relative overflow-hidden bg-slate-800 border border-slate-700 p-6 rounded-2xl shadow-sm hover:border-emerald-500/50 hover:bg-slate-800/80 transition-all group cursor-pointer flex flex-col justify-between"
         >
-          <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 rounded-full blur-2xl group-hover:bg-emerald-500/20 transition-all pointer-events-none" />
           <div className="space-y-4">
-            <div className="w-12 h-12 bg-emerald-500/10 rounded-xl flex items-center justify-center border border-emerald-500/20 shadow-inner">
-              <Clock className="w-6 h-6 text-emerald-400 group-hover:scale-110 transition-transform" />
+            <div className="w-10 h-10 bg-slate-700/50 rounded-lg flex items-center justify-center border border-slate-600 group-hover:border-emerald-500/30 group-hover:bg-emerald-500/10 transition-colors">
+              <Clock className="w-5 h-5 text-slate-300 group-hover:text-emerald-400 transition-colors" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-white group-hover:text-emerald-400 transition-colors">
+              <h3 className="text-base font-bold text-white transition-colors">
                 Set-wise Practice
               </h3>
-              <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+              <p className="text-xs text-slate-300 mt-1 leading-relaxed">
                 Practice Past year questions sets. Self assessment with meticulously prepared mock exam sets.
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-1.5 text-xs text-emerald-400 font-bold mt-5 group-hover:translate-x-1 transition-transform self-start">
+          <div className="flex items-center gap-1.5 text-xs text-slate-300 group-hover:text-emerald-400 font-semibold mt-6 transition-colors self-start">
             <span>Explore Board Sets</span>
-            <ChevronRight className="w-4 h-4" />
+            <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
           </div>
         </div>
 
         {/* Subject-wise Practice Card */}
         <div 
           onClick={onSelectSubjectPractice}
-          className="relative overflow-hidden bg-slate-900 border border-slate-800/80 p-6 rounded-2xl shadow-xl hover:border-violet-500/40 hover:shadow-violet-500/5 transition-all group cursor-pointer flex flex-col justify-between"
+          className="relative overflow-hidden bg-slate-800 border border-slate-700 p-6 rounded-2xl shadow-sm hover:border-violet-500/50 hover:bg-slate-800/80 transition-all group cursor-pointer flex flex-col justify-between"
         >
-          <div className="absolute top-0 right-0 w-24 h-24 bg-violet-500/10 rounded-full blur-2xl group-hover:bg-violet-500/20 transition-all pointer-events-none" />
           <div className="space-y-4">
-            <div className="w-12 h-12 bg-violet-500/10 rounded-xl flex items-center justify-center border border-violet-500/20 shadow-inner">
-              <Trophy className="w-6 h-6 text-violet-400 group-hover:scale-110 transition-transform" />
+            <div className="w-10 h-10 bg-slate-700/50 rounded-lg flex items-center justify-center border border-slate-600 group-hover:border-violet-500/30 group-hover:bg-violet-500/10 transition-colors">
+              <Trophy className="w-5 h-5 text-slate-300 group-hover:text-violet-400 transition-colors" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-white group-hover:text-violet-400 transition-colors">
+              <h3 className="text-base font-bold text-white transition-colors">
                 Subject-wise Practice
               </h3>
-              <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+              <p className="text-xs text-slate-300 mt-1 leading-relaxed">
                 Perfect for boosting score by covering all areas of syllabus and mastering concepts chapter by chapter.
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-1.5 text-xs text-violet-400 font-bold mt-5 group-hover:translate-x-1 transition-transform self-start">
+          <div className="flex items-center gap-1.5 text-xs text-slate-300 group-hover:text-violet-400 font-semibold mt-6 transition-colors self-start">
             <span>Enter Subject Rooms</span>
-            <ChevronRight className="w-4 h-4" />
+            <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
           </div>
         </div>
       </div>
 
       {/* Available MCQ Papers Direct Practice Grid */}
-      <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl space-y-4">
+      <div className="bg-slate-800 border border-slate-700 p-6 rounded-2xl space-y-4 shadow-sm">
         <div>
           <h4 className="font-bold text-white text-base tracking-tight flex items-center gap-2">
             <Zap className="w-4 h-4 text-emerald-400" />
             {cmsContent.dashboardLabels.arenaTitle}
           </h4>
-          <p className="text-xs text-slate-400">{cmsContent.dashboardLabels.arenaSubtitle}</p>
+          <p className="text-xs text-slate-300">{cmsContent.dashboardLabels.arenaSubtitle}</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -255,11 +253,11 @@ export default function DashboardView({
               <div 
                 key={set.id}
                 onClick={() => onSelectSet(set.id)}
-                className="p-5 bg-slate-950/40 rounded-xl hover:bg-slate-850 border border-slate-800 hover:border-emerald-500/30 transition-all cursor-pointer group flex flex-col justify-between space-y-3"
+                className="p-5 bg-slate-900/50 rounded-xl hover:bg-slate-900 border border-slate-700 hover:border-emerald-500/50 transition-all cursor-pointer group flex flex-col justify-between space-y-3"
               >
                 <div>
                   <div className="flex justify-between items-start gap-2">
-                    <span className="text-[9px] font-extrabold uppercase bg-slate-800 text-slate-400 px-2 py-0.5 rounded border border-slate-700">
+                    <span className="text-[9px] font-extrabold uppercase bg-slate-800 text-slate-300 px-2 py-0.5 rounded border border-slate-600">
                       {set.type === "past-year" ? "🏆 Board Past Paper" : "🔬 Premium Mock"}
                     </span>
                     <span className={`text-[9px] font-black px-2 py-0.5 rounded ${
@@ -271,13 +269,13 @@ export default function DashboardView({
                   <h5 className="text-sm font-bold text-white group-hover:text-emerald-400 transition-colors mt-2.5 leading-snug">
                     {set.title}
                   </h5>
-                  <p className="text-[11px] text-slate-400 mt-1 line-clamp-1">
+                  <p className="text-[11px] text-slate-300 mt-1 line-clamp-1">
                     {set.durationMinutes} Minutes allocation • Nepalese Boards level structure
                   </p>
                 </div>
 
-                <div className="flex items-center justify-between pt-2 border-t border-slate-800/60 text-xs">
-                  <span className="text-slate-500 font-mono font-bold">
+                <div className="flex items-center justify-between pt-2 border-t border-slate-700/60 text-xs">
+                  <span className="text-slate-400 font-mono font-bold">
                     {set.questions.length} Medical Questions
                   </span>
                   <span className="text-emerald-400 font-bold group-hover:underline flex items-center gap-1">

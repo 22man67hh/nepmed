@@ -28,14 +28,29 @@ export const TeamsTab: React.FC<{ theme: "dark" | "light" }> = ({ theme }) => {
 
   const handleSave = async (team: any) => {
     const isNew = !team.id;
-    const method = isNew ? "POST" : "PUT";
     const url = isNew ? "/api/teams" : `/api/teams/${team.id}`;
     
+    const formData = new FormData();
+    Object.keys(team).forEach(key => {
+      if (key === 'image_file') {
+        formData.append('image', team[key]);
+      } else if (team[key] !== null && team[key] !== undefined) {
+        if (typeof team[key] === 'boolean') {
+          formData.append(key, team[key] ? '1' : '0');
+        } else {
+          formData.append(key, team[key]);
+        }
+      }
+    });
+
+    if (!isNew) {
+      formData.append('_method', 'PUT');
+    }
+
     try {
       const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(team)
+        method: "POST", // Laravel accepts POST for FormData, uses _method=PUT
+        body: formData
       });
       if (res.ok) {
         fetchTeams();
@@ -175,8 +190,43 @@ export const TeamsTab: React.FC<{ theme: "dark" | "light" }> = ({ theme }) => {
                 <input type="text" value={isEditing.badge || ''} onChange={e => setIsEditing({...isEditing, badge: e.target.value})} placeholder="e.g. Founder" className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg" />
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-500">Image URL</label>
-                <input type="text" value={isEditing.image || ''} onChange={e => setIsEditing({...isEditing, image: e.target.value})} className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg" />
+                <label className="text-xs font-semibold text-slate-500">Image</label>
+                <div className="flex gap-2">
+                  <input 
+                    type="text" 
+                    placeholder="URL or Upload file..." 
+                    value={isEditing.image_file ? isEditing.image_file.name : (isEditing.image || '')} 
+                    onChange={e => {
+                      if (!isEditing.image_file) setIsEditing({...isEditing, image: e.target.value});
+                    }} 
+                    disabled={!!isEditing.image_file}
+                    className={`flex-1 px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs ${isEditing.image_file ? 'opacity-50' : ''}`} 
+                  />
+                  <label className="cursor-pointer bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-lg text-xs font-bold border border-slate-700 flex items-center justify-center">
+                    Upload
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      className="hidden" 
+                      onChange={e => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          // Save the actual File object so it can be appended to FormData
+                          setIsEditing({ ...isEditing, image_file: file, image: undefined });
+                        }
+                      }} 
+                    />
+                  </label>
+                  {isEditing.image_file && (
+                    <button 
+                      onClick={() => setIsEditing({...isEditing, image_file: undefined})}
+                      className="px-2 py-2 bg-red-950/30 text-red-500 rounded-lg border border-red-900/50 hover:bg-red-900/50 transition-colors"
+                      title="Remove file"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
               </div>
               <div className="space-y-1">
                 <label className="text-xs font-semibold text-slate-500">Facebook URL</label>

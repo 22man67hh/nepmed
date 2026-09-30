@@ -184,7 +184,8 @@ const proxyPrefixes = [
   "/api/leaderboard",
   "/api/my-history",
   "/api/pages",
-  "/api/teams"
+  "/api/teams",
+  "/storage"
 ];
 
 // Configure reverse proxy using http-proxy-middleware

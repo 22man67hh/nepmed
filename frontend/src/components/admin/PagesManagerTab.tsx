@@ -34,6 +34,14 @@ export function PagesManagerTab() {
         return;
       }
 
+      // If backend returns a Laravel HTML error page (e.g. table not found because migrations haven't run)
+      if (text.trim().startsWith('<')) {
+        console.warn("API returned HTML. Assuming backend error or missing table:", text.substring(0, 100));
+        setPages([]);
+        setError(""); // Prevent crashing the UI, just show empty
+        return;
+      }
+
       const data = JSON.parse(text);
       
       // Handle standard array, Laravel resource collections, or nested paginated objects

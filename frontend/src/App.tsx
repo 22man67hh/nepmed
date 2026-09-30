@@ -338,37 +338,49 @@ export default function App() {
   useEffect(() => {
     // Fetch base CMS config
     fetch("/api/cms/content")
-      .then(res => res.json())
-      .then(data => {
-        if (data && data.brandName) {
-          setCmsContent(prev => ({ ...prev, ...data }));
+      .then(res => res.text())
+      .then(text => {
+        if (!text || text.trim() === "" || text.trim().startsWith("<")) return;
+        try {
+          const data = JSON.parse(text);
+          if (data && data.brandName) {
+            setCmsContent(prev => ({ ...prev, ...data }));
+          }
+        } catch (e) {
+          console.error("Invalid JSON from CMS content API");
         }
       })
       .catch(err => console.error("Failed to load base CMS content:", err));
 
     // Fetch dynamic database pages to override UI text (landing page, dashboard)
     fetch("/api/pages")
-      .then(res => res.json())
-      .then(data => {
-        let pagesArr: any[] = [];
-        if (Array.isArray(data)) pagesArr = data;
-        else if (data && Array.isArray(data.data)) pagesArr = data.data;
-        else if (data && Array.isArray(data.pages)) pagesArr = data.pages;
+      .then(res => res.text())
+      .then(text => {
+        if (!text || text.trim() === "" || text.trim().startsWith("<")) return;
+        try {
+          const data = JSON.parse(text);
+          let pagesArr: any[] = [];
+          if (Array.isArray(data)) pagesArr = data;
+          else if (data && Array.isArray(data.data)) pagesArr = data.data;
+          else if (data && Array.isArray(data.pages)) pagesArr = data.pages;
 
-        if (pagesArr.length > 0) {
-          setCmsContent(prev => {
-            let next = { ...prev };
-            const landingPage = pagesArr.find(p => p.slug === 'landing-page');
-            const dashboardPage = pagesArr.find(p => p.slug === 'user-dashboard');
-            
-            if (landingPage && landingPage.content) {
-              next = { ...next, ...landingPage.content };
-            }
-            if (dashboardPage && dashboardPage.content) {
-              next = { ...next, ...dashboardPage.content };
-            }
-            return next;
-          });
+          if (pagesArr.length > 0) {
+            setCmsContent(prev => {
+              let next = { ...prev };
+              const landingPage = pagesArr.find(p => p.slug === 'landing-page');
+              const dashboardPage = pagesArr.find(p => p.slug === 'user-dashboard');
+              
+              if (landingPage && landingPage.content) {
+                next = { ...next, ...landingPage.content };
+              }
+              if (dashboardPage && dashboardPage.content) {
+                next = { ...next, ...dashboardPage.content };
+              }
+              return next;
+            });
+          }
+        } catch (e) {
+          console.error("Invalid JSON from Pages API");
         }
       })
       .catch(err => console.error("Failed to load dynamic pages config:", err));

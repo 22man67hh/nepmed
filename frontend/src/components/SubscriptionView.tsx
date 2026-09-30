@@ -309,7 +309,7 @@ export default function SubscriptionView({
           </div>
 
           {/* Benefits Card */}
-          <div className="bg-slate-900/30 border border-slate-800/80 p-6 rounded-2xl space-y-4">
+          <div className="bg-slate-800 border border-slate-700 p-6 rounded-2xl space-y-4 shadow-sm">
             <h3 className="text-sm font-bold text-white flex items-center gap-2">
               <span>🚀</span> Included Premium Benefits
             </h3>
@@ -330,7 +330,7 @@ export default function SubscriptionView({
             <span>🛡️</span> Secure Checkout
           </h2>
 
-          <div className="bg-slate-900 border border-slate-850 p-6 rounded-2xl space-y-6 shadow-xl">
+          <div className="bg-slate-800 border border-slate-700 p-6 rounded-2xl space-y-6 shadow-sm">
             {/* active summary */}
             <div className="bg-slate-950/50 p-4 rounded-xl space-y-2">
               <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block">Selected Plan</span>
