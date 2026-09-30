@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Plus, Trash2, Edit2, Save, X, LayoutTemplate, Database, AlertCircle, FileJson } from "lucide-react";
+import { Plus, Trash2, Edit2, Save, X, LayoutTemplate, Database, AlertCircle, FileJson, Settings2 } from "lucide-react";
+import { JsonVisualEditor } from "./JsonVisualEditor";
 
 export function PagesManagerTab() {
   const [pages, setPages] = useState<any[]>([]);
@@ -10,6 +11,7 @@ export function PagesManagerTab() {
   const [editTitle, setEditTitle] = useState("");
   const [editSlug, setEditSlug] = useState("");
   const [editContent, setEditContent] = useState("");
+  const [isVisualMode, setIsVisualMode] = useState(true);
 
   const fetchPages = async () => {
     try {
@@ -202,16 +204,41 @@ export function PagesManagerTab() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-400 mb-1 flex items-center gap-1">
-                <FileJson className="w-3 h-3" /> JSON Content
-              </label>
-              <textarea
-                value={editContent}
-                onChange={e => setEditContent(e.target.value)}
-                rows={12}
-                className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm font-mono text-emerald-400 focus:border-emerald-500 focus:outline-none"
-                placeholder="{}"
-              />
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs font-bold text-slate-400 flex items-center gap-1">
+                  <FileJson className="w-3 h-3" /> Page Content Configuration
+                </label>
+                <button 
+                  onClick={() => setIsVisualMode(!isVisualMode)}
+                  className="px-2 py-1 bg-slate-800 hover:bg-slate-700 rounded text-[10px] text-slate-300 flex items-center gap-1 font-bold"
+                >
+                  <Settings2 className="w-3 h-3" />
+                  {isVisualMode ? "Switch to Code" : "Switch to Visual"}
+                </button>
+              </div>
+              
+              {isVisualMode ? (
+                <div className="bg-slate-950 border border-slate-800 rounded-lg p-3 max-h-[500px] overflow-y-auto">
+                  <JsonVisualEditor 
+                    data={(() => {
+                      try {
+                        return JSON.parse(editContent || "{}");
+                      } catch (e) {
+                        return {};
+                      }
+                    })()}
+                    onChange={(newData) => setEditContent(JSON.stringify(newData, null, 2))}
+                  />
+                </div>
+              ) : (
+                <textarea
+                  value={editContent}
+                  onChange={e => setEditContent(e.target.value)}
+                  rows={12}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm font-mono text-emerald-400 focus:border-emerald-500 focus:outline-none"
+                  placeholder="{}"
+                />
+              )}
             </div>
 
             <div className="flex justify-end pt-2">

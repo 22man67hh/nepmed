@@ -387,12 +387,13 @@ export default function CustomAdminPanel({
     if (path === "/admin/cms") return "cms";
     if (path === "/admin/packages") return "packages";
     if (path === "/admin/teams") return "teams";
+    if (path === "/admin/settings") return "settings";
     return "dashboard";
   };
 
   const adminTab = getActiveTabFromPath();
 
-  const setAdminTab = (tab: "dashboard" | "papers" | "reports" | "questions" | "review" | "cms" | "exams" | "subjects" | "topics" | "packages" | string) => {
+  const setAdminTab = (tab: "dashboard" | "papers" | "reports" | "questions" | "review" | "cms" | "settings" | "exams" | "subjects" | "topics" | "packages" | "teams" | string) => {
     const targetPath = tab === "papers" ? "/admin/mcq-editor" : `/admin/${tab}`;
     navigate(targetPath);
   };
@@ -1833,7 +1834,7 @@ export default function CustomAdminPanel({
                 }`}
             >
               <Settings className="w-4 h-4 text-violet-400 shrink-0" />
-              <span className={`${isSidebarCollapsed ? "hidden md:hidden" : "block"}`}>Pages</span>
+              <span className={`${isSidebarCollapsed ? "hidden md:hidden" : "block"}`}>Pages (Dynamic)</span>
             </button>
           </nav>
         </div>
@@ -1888,7 +1889,7 @@ export default function CustomAdminPanel({
               {adminTab === "exams" && "🎓 Target Board Exams"}
               {adminTab === "subjects" && "📚 Subjects Directory"}
               {adminTab === "topics" && "🏷️ Topics Directory"}
-              {adminTab === "cms" && "⚙️ Pages & Dynamic Config"}
+              {adminTab === "cms" && "⚙️ Dynamic Pages Config"}
               {adminTab === "packages" && "💎 Premium Packages"}
               {adminTab === "teams" && "👥 Teams Directory"}
             </h2>
@@ -2045,6 +2046,7 @@ export default function CustomAdminPanel({
           {adminTab === "cms" && (
             <PagesManagerTab />
           )}
+
         </div>
       </main>
 

@@ -1,5 +1,5 @@
 {
-  "brandName": "PrepzaNepal",
+  "brandName": "PrepZaasss",
   "sidebarLabels": {
     "dashboard": "Dashboard",
     "set_practice": "Set wise Practice",
@@ -30,17 +30,13 @@
     "loksewa": "Public Service Commission (Loksewa Aayog) General Medical Officer and Healthcare Services exams."
   },
   "aboutUsLabels": {
-    "heroTitle": "About PrepzaNepal Editorial Board",
-    "heroDescription": "PrepzaNepal is Nepal's premier full-stack interactive medical education engine. We are dedicated to providing high-yield multiple choice test questions, detailed clinical rationales, and memory mnemonics meticulously aligned with the standards of the Medical Education Commission (MEC) and the Nepal Medical Council (NMC) licensing examinations.",
-    "teamTitle": "Our Eminent Editorial Board",
-    "contactTitle": "Official Contact Details",
-    "contactDescription": "If you have institutional registration queries, partnership opportunities, or feedback regarding NMCLE syllabus coverage, reach us directly or visit our office.",
-    "officeTitle": "Our Office Address",
-    "officeText": "Maharajgunj Clinical Complex\nOpposite Teaching Hospital (IOM)\nKathmandu 44600, Nepal",
-    "emailTitle": "Email Addresses",
-    "emailText": "Editorial: info@PrepzaNepal.edu.np\nSupport: support@PrepzaNepal.edu.np",
-    "phoneTitle": "Phone & Support Hours",
-    "phoneText": "Landline: +977-1-4412345\nCell: +977-98510-00000\nSun - Fri, 9:00 AM - 5:00 PM (NST)"
+    "heroDescription": "PrepZaa is a premier online learning and examination preparation platform dedicated to helping students and professionals achieve success. Built with a vision to make quality exam preparation accessible, affordable, and effective.",
+    "missionText": "To democratize access to high-quality exam preparation resources across Nepal.",
+    "visionText": "To become the most trusted digital learning companion for every competitive examinee.",
+    "statsText": "Join thousands of successful candidates who have achieved their dreams with us.",
+    "title": "",
+    "subTitle": "",
+    "bodyText": ""
   },
   "editorialTeam": [
     {
@@ -1070,5 +1066,45 @@
         "city": "Chitwan"
       }
     ]
-  }
+  },
+  "heroTitle": "Master Your Exams with PrepZaaNepal",
+  "heroDescription": "Nepal's premier learning platform for competitive entrance, licensing, and public service examinations. Access high-yield question banks, detailed explanations, and performance tracking.",
+  "teamTitle": "Our Editorial Team",
+  "contactTitle": "Get In Touch",
+  "contactDescription": "Have questions about our premium packages or need technical support? We're here to help.",
+  "officeTitle": "Head Office",
+  "officeText": "Kathmandu, Nepal",
+  "emailTitle": "Email Us",
+  "emailText": "support@prepzaa.com",
+  "phoneTitle": "Call Us",
+  "phoneText": "+977 9800000000",
+  "testimonials": [
+    {
+      "name": "Dr. Aarati Sharma",
+      "exam": "NMC Licensing",
+      "text": "The mock tests on this platform were incredibly similar to the actual NMC exam. The detailed explanations helped me clear my concepts."
+    },
+    {
+      "name": "Sujan Thapa",
+      "exam": "CEE UG",
+      "text": "I loved the topic-wise practice feature. It allowed me to focus on my weak areas like Physics and improve my overall score significantly."
+    }
+  ],
+  "faqs": [
+    {
+      "question": "Are the questions updated according to the latest syllabussasa?",
+      "answer": "Yes, our expert editorial team regularly updates the question bank to strictly align with the latest CEE, NMC, and PSC syllabuses."
+    },
+    {
+      "question": "Can I access the platform on my mobile phone?",
+      "answer": "Absolutely! Our platform is fully mobile-responsive, allowing you to practice MCQs anywhere, anytime."
+    }
+  ],
+  "dashboardConfig": {},
+  "savedQuestionsConfig": {},
+  "myReportConfig": {},
+  "discussionForumConfig": {},
+  "supportConfig": {},
+  "buttonStyles": [],
+  "targetExams": []
 }

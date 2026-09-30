@@ -1316,53 +1316,59 @@ export default function LandingPage({
           <div className="space-y-12">
             <div className="text-center max-w-3xl mx-auto space-y-3">
               <h2 className={`text-3xl sm:text-4xl font-extrabold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                Engineered for Competitive Exam Mastery
+                {cmsContent?.featuresTitle || "Engineered for Competitive Exam Mastery"}
               </h2>
               <p className={`text-sm sm:text-base ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-                Everything you need to turn high-yield syllabus knowledge into rapid multiple-choice precision across Medical, Engineering, Nursing, and Loksewa streams.
+                {cmsContent?.featuresSubtitle || "Everything you need to turn high-yield syllabus knowledge into rapid multiple-choice precision across Medical, Engineering, Nursing, and Loksewa streams."}
               </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[
+              {(cmsContent?.featuresList || [
                 {
                   title: "Real Board & Entrance Simulator",
                   desc: "Custom countdown timers, official negative marking, and section-by-section breakdown matching official MEC, IOE, NMCLE, and Loksewa patterns.",
-                  icon: Clock,
+                  iconName: "clock",
                   badge: "Simulation"
                 },
                 {
                   title: "Smart AI Explanations & Tutor",
                   desc: "Instantly ask our AI Tutor for option rationales, high-yield clinical & engineering pearls, mnemonic generators, and key formulas.",
-                  icon: BrainCircuit,
+                  iconName: "brain",
                   badge: "AI Powered"
                 },
                 {
                   title: "High-Yield Curriculum Notes",
                   desc: "Structured, hierarchical textbook notes covering entire syllabus subjects with flowcharts, comparative tables, and core concepts.",
-                  icon: BookOpen,
+                  iconName: "book",
                   badge: "Curriculum"
                 },
                 {
                   title: "Flashcards & Spaced Repetition",
                   desc: "Convert tricky questions and key formulas into flashcards with one click. Master difficult memory-heavy facts easily.",
-                  icon: Zap,
+                  iconName: "zap",
                   badge: "Revision"
                 },
                 {
                   title: "Deep Percentile & Weakness Analytics",
                   desc: "Identify your lowest scoring subjects and topics automatically. Track your speed per question and historical test improvement trajectories.",
-                  icon: BarChart3,
+                  iconName: "chart",
                   badge: "Analytics"
                 },
                 {
                   title: "Discussion Forum & Verified Mentors",
                   desc: "Discuss disputed questions with peers and verified faculty. Read expert consensus and verified solutions under every question.",
-                  icon: Users,
+                  iconName: "users",
                   badge: "Community"
                 }
-              ].map((feat, idx) => {
-                const Icon = feat.icon;
+              ]).map((feat: any, idx: number) => {
+                let Icon = Clock;
+                if (feat.iconName === 'brain') Icon = BrainCircuit;
+                if (feat.iconName === 'book') Icon = BookOpen;
+                if (feat.iconName === 'zap') Icon = Zap;
+                if (feat.iconName === 'chart') Icon = BarChart3;
+                if (feat.iconName === 'users') Icon = Users;
+
                 return (
                   <div
                     key={idx}
@@ -1860,19 +1866,19 @@ export default function LandingPage({
             <div className={`max-w-4xl mx-auto p-6 sm:p-8 rounded-3xl border text-center space-y-4 ${
               isDark ? 'bg-slate-900 border-slate-800 text-slate-100' : 'bg-white border-slate-200 text-slate-900 shadow-sm'
             }`}>
-              <h3 className="text-xl font-bold">Have Questions or Need Guidance?</h3>
+              <h3 className="text-xl font-bold">{cmsContent?.contactTitle || "Have Questions or Need Guidance?"}</h3>
               <p className={`text-xs sm:text-sm max-w-xl mx-auto ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-                Our academic team is available to assist you with subscription queries, question discussions, or institutional packages.
+                {cmsContent?.contactDescription || "Our academic team is available to assist you with subscription queries, question discussions, or institutional packages."}
               </p>
               <div className="flex flex-wrap items-center justify-center gap-4 pt-2 text-xs font-bold">
                 <span className={`px-3.5 py-2 rounded-xl ${isDark ? 'bg-slate-800 text-slate-200' : 'bg-slate-100 text-slate-800'}`}>
-                  Email: support@prepzaa.com
+                  {cmsContent?.emailTitle || "Email"}: {cmsContent?.supportConfig?.emailText || cmsContent?.supportConfig?.EmailText || cmsContent?.emailText || "support@prepzaa.com"}
                 </span>
                 <span className="px-3.5 py-2 rounded-xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
-                  WhatsApp / Viber: +977-9860392540
+                  {cmsContent?.phoneTitle || "WhatsApp / Viber"}: {cmsContent?.supportConfig?.phoneText || cmsContent?.supportConfig?.PhoneText || cmsContent?.phoneText || "+977-9860392540"}
                 </span>
                 <span className={`px-3.5 py-2 rounded-xl ${isDark ? 'bg-slate-800 text-slate-200' : 'bg-slate-100 text-slate-800'}`}>
-                  Pokhara, Nepal
+                  {cmsContent?.supportConfig?.officeText || cmsContent?.supportConfig?.OfficeText || cmsContent?.officeText || "Kathmandu, Nepal"}
                 </span>
               </div>
             </div>

@@ -120,24 +120,36 @@ export default function AboutUsView({ userProfile, cmsContent, dbTeams = [] }: A
     ? dbTeams.filter((t: any) => t.status !== "inactive").map((t: any) => ({
         ...t,
         role: t.designation || t.role,
-        avatar: t.image || t.avatarUrl,
+        avatar: t.image ? (t.image.startsWith('http') ? t.image : `${t.image}`) : t.avatarUrl,
         institution: t.hospital || t.institution,
       }))
     : (cmsContent?.editorialTeam || []).filter((member: any) => member.enabled !== false);
-  const labels = cmsContent?.aboutUsLabels || {
-    heroTitle: "About Us",
-    heroDescription: "",
+  const supportConfig = cmsContent?.supportConfig || {};
+  const officeVal = supportConfig.officeText || supportConfig.OfficeText || cmsContent?.officeText || "Bagbazar, Kathmandu, Nepal\n(Near Medical Council)";
+  const emailVal = supportConfig.emailText || supportConfig.EmailText || cmsContent?.emailText || "support@prepzaa.com";
+  const phoneVal = supportConfig.phoneText || supportConfig.PhoneText || cmsContent?.phoneText || "+977-9800000000\nMon - Fri: 10:00 AM - 5:00 PM";
+
+  const defaultLabels = {
+    heroTitle: "About PrepzaNepal Editorial Board",
+    heroDescription: "PrepzaNepal is Nepal's premier full-stack interactive medical education engine. We are dedicated to providing high-yield multiple choice test questions, detailed clinical rationales, and memory mnemonics meticulously aligned with the standards of the Medical Education Commission (MEC) and the Nepal Medical Council (NMC) licensing examinations.",
     teamTitle: "Our Eminent Editorial Board",
-    contactTitle: "Official Contact Details",
+    contactTitle: "Organization Contact Info",
     contactDescription: "",
     officeTitle: "Our Office Address",
-    officeText: "",
+    officeText: officeVal,
     emailTitle: "Email Addresses",
-    emailText: "",
+    emailText: emailVal,
     phoneTitle: "Phone & Support Hours",
-    phoneText: ""
+    phoneText: phoneVal
   };
 
+  const userLabels = cmsContent?.aboutUsLabels || {};
+  const labels: any = { ...defaultLabels };
+  Object.keys(userLabels).forEach(key => {
+    if (userLabels[key]) {
+      labels[key] = userLabels[key];
+    }
+  });
   return (
     <div id="about-us-container" className="space-y-8 animate-in fade-in duration-200">
       
@@ -175,7 +187,7 @@ export default function AboutUsView({ userProfile, cmsContent, dbTeams = [] }: A
                   src={member.avatar} 
                   alt={member.name}
                   referrerPolicy="no-referrer"
-                  className="w-14 h-14 bg-slate-800 rounded-xl border border-slate-700/60 p-1 mb-3.5" 
+                  className="w-14 h-14 bg-slate-800 rounded-xl border border-slate-700/60 p-1 mb-3.5 object-cover" 
                 />
                 <h4 className="text-sm font-bold text-white leading-snug">{member.name}</h4>
                 <p className="text-[11px] text-emerald-400 font-medium mt-1">{member.role}</p>
