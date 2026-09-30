@@ -1763,7 +1763,7 @@ export default function LandingPage({
                 <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Distinguished clinicians, subject experts, and technology leaders guiding the platform.</p>
               </div>
               <LeadershipCards 
-                editorialTeam={dbTeams && dbTeams.filter(t => t.type === 'core').length > 0 ? dbTeams.filter(t => t.type === 'core' && t.enabled !== 0).map(t => ({...t, institution: t.hospital || t.institution})) : cmsContent?.editorialTeam} 
+                editorialTeam={dbTeams && dbTeams.filter(t => t.type === 'core').length > 0 ? dbTeams.filter(t => t.type === 'core' && t.status !== 'inactive').map(t => ({...t, role: t.designation || t.role, avatar: t.image || t.avatarUrl, institution: t.hospital || t.institution})) : cmsContent?.editorialTeam} 
                 isDark={isDark} 
               />
             </div>
@@ -1777,7 +1777,7 @@ export default function LandingPage({
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
                   {((dbTeams && dbTeams.filter(t => t.type === 'chief_editor').length > 0)
-                    ? dbTeams.filter(t => t.type === 'chief_editor' && t.enabled !== 0)
+                    ? dbTeams.filter(t => t.type === 'chief_editor' && t.status !== 'inactive').map(t => ({...t, editorName: t.name, role: t.designation || t.role, avatar: t.image || t.avatarUrl, institution: t.hospital || t.institution}))
                     : [
                         { examName: "MECEE-PG (MD/MS)", editorName: "Dr. Sunil Subedi", role: "Section Editor, Senior Medical Officer", institution: "Medical Academic Board" },
                         { examName: "MECEE-BL (UG Entrance)", editorName: "Dr. Sunil Subedi", role: "Section Editor, ECFMG Certified Physician", institution: "Kathmandu Valley Medical Mentors" },
@@ -1822,7 +1822,7 @@ export default function LandingPage({
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
                   {((dbTeams && dbTeams.filter(t => t.type === 'special_thanks').length > 0)
-                    ? dbTeams.filter(t => t.type === 'special_thanks' && t.enabled !== 0)
+                    ? dbTeams.filter(t => t.type === 'special_thanks' && t.status !== 'inactive').map(t => ({...t, roleOrAffiliation: t.designation || t.role, note: t.description || t.note}))
                     : [
                         { name: "Dr. Sandesh Devkota", roleOrAffiliation: "MBBS(UCMS)", note: "For clinical syllabus mapping, case simulation reviews, and question bank verification." },
                         { name: "Dr. Manish Bhandari", roleOrAffiliation: "MBBS(COMS)", note: "For high-yield clinical pearls, differential diagnosis tables, and explanation reviews." },

@@ -16,11 +16,18 @@ class TeamController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string',
-            'role' => 'nullable|string',
-            'type' => 'nullable|string', // e.g., 'chief_editor', 'special_thanks'
-            'avatarUrl' => 'nullable|string',
+            'designation' => 'nullable|string',
+            'type' => 'nullable|string', 
+            'image' => 'nullable|string',
             'hospital' => 'nullable|string',
-            'enabled' => 'boolean'
+            'status' => 'nullable|string',
+            'specialty' => 'nullable|string',
+            'badge' => 'nullable|string',
+            'is_founder' => 'boolean',
+            'facebook' => 'nullable|string',
+            'linkedin' => 'nullable|string',
+            'twitter' => 'nullable|string',
+            'description' => 'nullable|string'
         ]);
 
         $team = Team::create($validated);

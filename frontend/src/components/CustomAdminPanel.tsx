@@ -45,12 +45,14 @@ import {
   Sun,
   Moon,
   Package,
-  Database
+  Database,
+  Users
 } from "lucide-react";
 import { QuestionSet, Question } from "../types";
 import { generateQuestionIdForSubject, retagAllQuestions } from "../subjectsData";
 import RichTextEditor from "./RichTextEditor";
 import { PagesManagerTab } from "./admin/PagesManagerTab";
+import { TeamsTab } from "./admin/TeamsTab";
 
 // Modular Subcomponents Imports
 import { DashboardTab } from "./admin/DashboardTab";
@@ -372,7 +374,7 @@ export default function CustomAdminPanel({
 
 
   // Navigation Panel State linked to URL routes
-  const getActiveTabFromPath = (): "dashboard" | "papers" | "reports" | "questions" | "review" | "cms" | "exams" | "subjects" | "topics" => {
+  const getActiveTabFromPath = (): any => {
     const path = location.pathname;
     if (path.startsWith("/admin/mcq-editor") || path === "/admin/papers") return "papers";
     if (path === "/admin/subjects") return "subjects";
@@ -384,6 +386,7 @@ export default function CustomAdminPanel({
     if (path === "/admin/reports") return "reports";
     if (path === "/admin/cms") return "cms";
     if (path === "/admin/packages") return "packages";
+    if (path === "/admin/teams") return "teams";
     return "dashboard";
   };
 
@@ -1655,7 +1658,7 @@ export default function CustomAdminPanel({
 
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex font-sans w-full relative overflow-hidden">
+    <div className="h-screen bg-slate-950 text-slate-100 flex font-sans w-full relative overflow-hidden">
 
       {/* Mobile Menu Backdrop */}
       {isMobileMenuOpen && (
@@ -1750,6 +1753,16 @@ export default function CustomAdminPanel({
             >
               <Package className="w-4 h-4" />
               <span className={`${isSidebarCollapsed ? "hidden md:hidden" : "block"}`}>Premium Packages</span>
+            </button>
+            <button
+              onClick={() => { setAdminTab("teams"); if (window.innerWidth < 768) setIsMobileMenuOpen(false); }}
+              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${adminTab === "teams"
+                  ? "bg-gradient-to-r from-emerald-600 to-emerald-500 text-white shadow-lg shadow-emerald-500/20"
+                  : "text-slate-400 hover:text-white hover:bg-slate-800/80"
+                }`}
+            >
+              <Users className="w-4 h-4" />
+              <span className={`${isSidebarCollapsed ? "hidden md:hidden" : "block"}`}>Teams Directory</span>
             </button>
 
             <button
@@ -1877,6 +1890,7 @@ export default function CustomAdminPanel({
               {adminTab === "topics" && "🏷️ Topics Directory"}
               {adminTab === "cms" && "⚙️ Pages & Dynamic Config"}
               {adminTab === "packages" && "💎 Premium Packages"}
+              {adminTab === "teams" && "👥 Teams Directory"}
             </h2>
           </div>
 
@@ -1986,6 +2000,10 @@ export default function CustomAdminPanel({
               dbExams={dbExams} 
               allSets={allSets} 
             />
+          )}
+
+          {adminTab === "teams" && (
+            <TeamsTab theme={theme} />
           )}
 
           {adminTab === "questions" && (

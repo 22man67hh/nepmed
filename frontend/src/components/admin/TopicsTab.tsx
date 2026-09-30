@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Plus, AlertCircle, Edit3, Trash2, X } from "lucide-react";
+import { Plus, AlertCircle, Edit3, Trash2, X, Search } from "lucide-react";
 
 interface TopicsTabProps {
   dbTopics: any[];
@@ -21,7 +21,8 @@ export const TopicsTab: React.FC<TopicsTabProps> = ({
   const [editingTopic, setEditingTopic] = useState<any | null>(null);
   const [topicForm, setTopicForm] = useState({ name: "", subject_id: "", weight: "0", icon: "tag" });
 
-  // Pagination States
+  // Pagination & Search States
+  const [searchQuery, setSearchQuery] = useState("");
   const [paginatedTopics, setPaginatedTopics] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -141,23 +142,37 @@ export const TopicsTab: React.FC<TopicsTabProps> = ({
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200 font-sans">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h3 className="text-sm font-bold text-white uppercase tracking-wider">Course Topics</h3>
-          <p className="text-xs text-slate-400 mt-0.5">Manage subcategory units linked to Subjects (e.g. Thermodynamics, Upper Limb)</p>
+          <p className="text-xs text-slate-400 mt-0.5">Manage subcategory units linked to Subjects</p>
         </div>
-        <button
-          type="button"
-          onClick={() => {
-            setEditingTopic(null);
-            setTopicForm({ name: "", subject_id: dbSubjects[0]?.uuid || "", weight: "0", icon: "tag" });
-            setShowTopicModal(true);
-          }}
-          className="bg-violet-600 hover:bg-violet-500 text-white font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-lg shadow-violet-600/10"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Add Topic</span>
-        </button>
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          <div className="relative flex-1 sm:w-64">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search className="h-4 w-4 text-slate-400" />
+            </div>
+            <input
+              type="text"
+              placeholder="Search topics..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="block w-full pl-9 pr-3 py-2 border border-slate-700 rounded-xl leading-5 bg-slate-900 text-slate-300 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setEditingTopic(null);
+              setTopicForm({ name: "", subject_id: dbSubjects[0]?.uuid || "", weight: "0", icon: "tag" });
+              setShowTopicModal(true);
+            }}
+            className="bg-violet-600 hover:bg-violet-500 text-white font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-lg shadow-violet-600/10 shrink-0"
+          >
+            <Plus className="w-4 h-4" />
+            <span className="hidden sm:inline">Add Topic</span>
+          </button>
+        </div>
       </div>
 
       {paginatedTopics.length === 0 && !loading ? (
@@ -185,7 +200,7 @@ export const TopicsTab: React.FC<TopicsTabProps> = ({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60 text-xs">
-                {paginatedTopics.map((topic) => {
+                {paginatedTopics.filter(t => t.name.toLowerCase().includes(searchQuery.toLowerCase())).map((topic) => {
                   const parentSubject = dbSubjects.find(s => s.uuid === topic.subject_id);
                   const connectedExam = parentSubject ? dbExams.find(e => e.id === parentSubject.exam_id) : null;
                   return (

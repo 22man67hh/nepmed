@@ -1297,6 +1297,7 @@ export default function App() {
         <AboutUsView 
           userProfile={userProfile} 
           cmsContent={cmsContent}
+          dbTeams={dbTeams}
         />
       );
     }
@@ -1511,7 +1512,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-955 flex flex-col landscape:flex-row lg:flex-row font-sans">
+    <div className="h-screen overflow-hidden bg-slate-955 flex flex-col landscape:flex-row lg:flex-row font-sans">
       
       {/* Sidebar Layout */}
       <Sidebar 

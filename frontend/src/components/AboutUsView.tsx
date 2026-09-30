@@ -36,9 +36,10 @@ interface TicketItem {
 interface AboutUsViewProps {
   userProfile: UserProfile;
   cmsContent: CMSContent;
+  dbTeams?: any[];
 }
 
-export default function AboutUsView({ userProfile, cmsContent }: AboutUsViewProps) {
+export default function AboutUsView({ userProfile, cmsContent, dbTeams = [] }: AboutUsViewProps) {
   // Contact Form / Ticket Form States
   const [ticketName, setTicketName] = useState(userProfile.name || "");
   const [ticketEmail, setTicketEmail] = useState(userProfile.email || "");
@@ -115,7 +116,14 @@ export default function AboutUsView({ userProfile, cmsContent }: AboutUsViewProp
   };
 
   // Safe fallback to CMS config or default array
-  const teamList = (cmsContent?.editorialTeam || []).filter((member: any) => member.enabled !== false);
+  const teamList = dbTeams.length > 0 
+    ? dbTeams.filter((t: any) => t.status !== "inactive").map((t: any) => ({
+        ...t,
+        role: t.designation || t.role,
+        avatar: t.image || t.avatarUrl,
+        institution: t.hospital || t.institution,
+      }))
+    : (cmsContent?.editorialTeam || []).filter((member: any) => member.enabled !== false);
   const labels = cmsContent?.aboutUsLabels || {
     heroTitle: "About Us",
     heroDescription: "",
