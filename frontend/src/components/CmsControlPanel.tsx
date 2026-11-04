@@ -460,7 +460,7 @@ export const CmsControlPanel: React.FC<CmsControlPanelProps> = ({
                       <span className="text-sm">🏥</span>
                     </div>
                     <h4 className="text-sm font-black text-white tracking-widest uppercase">
-                      {cmsLoginLabels?.brandName || "PrepzaNepal"}
+                      {cmsLoginLabels?.brandName || "NepMed"}
                     </h4>
                     <p className="text-[10px] text-slate-400 max-w-xs mx-auto">
                       {cmsLoginLabels?.brandSubtitle || "Nepal's Premier Medical MCQ Prep"}
@@ -2551,7 +2551,7 @@ export const CmsControlPanel: React.FC<CmsControlPanelProps> = ({
                         const list = [...(cmsLeaderboardConfig?.competitors || [])];
                         list.push({
                           name: "Dr. New Candidate",
-                          avatarUrl: "https://api.dicebear.com/7.x/adventurer/svg?seed=newcand",
+                          avatarUrl: "https://ui-avatars.com/api/?name=New+Candidate&background=10b981&color=fff&bold=true&size=128",
                           totalCorrect: 120,
                           testsCompleted: 5,
                           accuracy: 80,
@@ -2641,7 +2641,7 @@ export const CmsControlPanel: React.FC<CmsControlPanelProps> = ({
                           name: "Prof. Dr. New Board Director",
                           role: "Consultant Medical Director",
                           institution: "IOM / Teaching Hospital, Kathmandu",
-                          avatar: "https://api.dicebear.com/7.x/adventurer/svg?seed=newdoc",
+                          avatar: "https://ui-avatars.com/api/?name=New+Doctor&background=7c3aed&color=fff&bold=true&size=128",
                           specialty: "Clinical Medicine, Licensure Exams Specialist",
                           enabled: true
                         });

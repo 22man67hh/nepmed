@@ -1,7 +1,3 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
 
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -22,10 +18,8 @@ import {
   User, 
   Settings as SettingsIcon, 
   LogOut, 
-  Sun, 
-  Moon, 
   Stethoscope, 
-  Sliders 
+  Sliders
 } from "lucide-react";
 
 // Components
@@ -49,7 +43,7 @@ import ReferEarnView from "./components/ReferEarnView";
 import AdminLoginScreen from "./components/AdminLoginScreen";
 
 const INITIAL_CMS_CONTENT: CMSContent = {
-  brandName: "PrepzaNepal",
+  brandName: "NepMed",
   sidebarLabels: {
     dashboard: "Dashboard",
     set_practice: "Set wise Practice",
@@ -80,15 +74,15 @@ const INITIAL_CMS_CONTENT: CMSContent = {
     "loksewa": "Public Service Commission (Loksewa Aayog) General Medical Officer and Healthcare Services exams."
   },
   aboutUsLabels: {
-    heroTitle: "About PrepzaNepal Editorial Board",
-    heroDescription: "PrepzaNepal is Nepal's premier full-stack interactive medical education engine. We are dedicated to providing high-yield multiple choice test questions, detailed clinical rationales, and memory mnemonics meticulously aligned with the standards of the Medical Education Commission (MEC) and the Nepal Medical Council (NMC) licensing examinations.",
+    heroTitle: "About NepMed Editorial Board",
+    heroDescription: "NepMed is Nepal's premier full-stack interactive medical education engine. We are dedicated to providing high-yield multiple choice test questions, detailed clinical rationales, and memory mnemonics meticulously aligned with the standards of the Medical Education Commission (MEC) and the Nepal Medical Council (NMC) licensing examinations.",
     teamTitle: "Our Eminent Editorial Board",
     contactTitle: "Official Contact Details",
     contactDescription: "If you have institutional registration queries, partnership opportunities, or feedback regarding NMCLE syllabus coverage, reach us directly or visit our office.",
     officeTitle: "Our Office Address",
     officeText: "Maharajgunj Clinical Complex\nOpposite Teaching Hospital (IOM)\nKathmandu 44600, Nepal",
     emailTitle: "Email Addresses",
-    emailText: "Editorial: info@PrepzaNepal.edu.np\nSupport: support@PrepzaNepal.edu.np",
+    emailText: "Editorial: info@nepmed.com.np\nSupport: support@nepmed.com.np",
     phoneTitle: "Phone & Support Hours",
     phoneText: "Landline: +977-1-4412345\nCell: +977-98510-00000\nSun - Fri, 9:00 AM - 5:00 PM (NST)"
   },
@@ -97,21 +91,21 @@ const INITIAL_CMS_CONTENT: CMSContent = {
       name: "Prof. Dr. Ramesh Koirala",
       role: "Chief Editorial Director",
       institution: "Institute of Medicine (IOM), Maharajgunj, Kathmandu",
-      avatar: "https://api.dicebear.com/7.x/adventurer/svg?seed=ramesh",
+      avatar: "https://ui-avatars.com/api/?name=Ramesh+Koirala&background=0f766e&color=fff&bold=true&size=128",
       specialty: "Clinical Surgery, NMCLE Curriculum & High-Yield Case Scenarios"
     },
     {
       name: "Dr. Sunil Subedi",
       role: "Associate Professor of Pathology",
       institution: "Kathmandu University School of Medical Sciences (KUSMS)",
-      avatar: "https://api.dicebear.com/7.x/adventurer/svg?seed=sunil",
+      avatar: "https://ui-avatars.com/api/?name=Sunil+Subedi&background=7c3aed&color=fff&bold=true&size=128",
       specialty: "General Pathology, Immunology & MEC-PG Exam Frameworks"
     },
     {
       name: "Dr. Anjana Adhikari",
       role: "Senior Consultant Gynecologist",
       institution: "Patan Academy of Health Sciences (PAHS), Lalitpur",
-      avatar: "https://api.dicebear.com/7.x/adventurer/svg?seed=anjana",
+      avatar: "https://ui-avatars.com/api/?name=Anjana+Shrestha&background=be185d&color=fff&bold=true&size=128",
       specialty: "Maternal Health Policy, Obstetrics & Public Health Programs"
     }
   ],
@@ -142,7 +136,7 @@ const INITIAL_CMS_CONTENT: CMSContent = {
     }
   ],
   loginLabels: {
-    brandName: "PrepzaNepal",
+    brandName: "NepMed",
     brandSubtitle: "Nepal's Premier Medical MCQs & License Prep Engine",
     signupGoogleButton: "Sign Up with Google",
     signinGoogleButton: "Sign In with Google",
@@ -183,10 +177,10 @@ const INITIAL_CMS_CONTENT: CMSContent = {
   },
   referEarnConfig: {
     title: "Refer Friends, Earn Cash & Points!",
-    subtitle: "Invite other medical students/doctors to PrepzaNepal. Get rewarded instantly upon registration and subscription purchase.",
+    subtitle: "Invite other medical students/doctors to NepMed. Get rewarded instantly upon registration and subscription purchase.",
     pointsPerReg: 50,
     pointsPerSub: 500,
-    promoMessage: "Hey! Check out PrepzaNepal, Nepal's best app for MECEE and Licensing MCQs. Use my code to register and get bonus access!",
+    promoMessage: "Hey! Check out NepMed, Nepal's best medical exam app for MECEE and Licensing MCQs. Use my code to register and get bonus access!",
     rules: [
       "Share your unique custom referral link or code with friends.",
       "Get 50 points as soon as they register their verified account.",
@@ -289,13 +283,13 @@ const INITIAL_CMS_CONTENT: CMSContent = {
     subtitle: "See how your total correct MCQ counts stack up against Nepal's top licensing and entrance candidates.",
     subTitleTag: "National Medical Exam Standings",
     competitors: [
-      { name: "Dr. Sandeep Adhikari", avatarUrl: "https://api.dicebear.com/7.x/adventurer/svg?seed=Sandeep", totalCorrect: 285, testsCompleted: 15, accuracy: 92, city: "Kathmandu" },
-      { name: "Pooja Shrestha", avatarUrl: "https://api.dicebear.com/7.x/adventurer/svg?seed=Pooja", totalCorrect: 242, testsCompleted: 13, accuracy: 88, city: "Lalitpur" },
-      { name: "Sushant Thapa", avatarUrl: "https://api.dicebear.com/7.x/adventurer/svg?seed=Sushant", totalCorrect: 215, testsCompleted: 11, accuracy: 86, city: "Pokhara" },
-      { name: "Aayushma Bhandari", avatarUrl: "https://api.dicebear.com/7.x/adventurer/svg?seed=Aayushma", totalCorrect: 198, testsCompleted: 12, accuracy: 81, city: "Biratnagar" },
-      { name: "Dr. Ramesh Kushwaha", avatarUrl: "https://api.dicebear.com/7.x/adventurer/svg?seed=Ramesh", totalCorrect: 184, testsCompleted: 10, accuracy: 84, city: "Janakpur" },
-      { name: "Niranjan Chaudhary", avatarUrl: "https://api.dicebear.com/7.x/adventurer/svg?seed=Niranjan", totalCorrect: 172, testsCompleted: 9, accuracy: 79, city: "Butwal" },
-      { name: "Samikshya Devkota", avatarUrl: "https://api.dicebear.com/7.x/adventurer/svg?seed=Samikshya", totalCorrect: 158, testsCompleted: 8, accuracy: 82, city: "Chitwan" }
+      { name: "Dr. Sandeep Adhikari", avatarUrl: "https://ui-avatars.com/api/?name=Sandeep+Adhikari&background=1d4ed8&color=fff&bold=true&size=128", totalCorrect: 285, testsCompleted: 15, accuracy: 92, city: "Kathmandu" },
+      { name: "Pooja Shrestha", avatarUrl: "https://ui-avatars.com/api/?name=Pooja+Shrestha&background=be185d&color=fff&bold=true&size=128", totalCorrect: 242, testsCompleted: 13, accuracy: 88, city: "Lalitpur" },
+      { name: "Sushant Thapa", avatarUrl: "https://ui-avatars.com/api/?name=Sushant+Thapa&background=0f766e&color=fff&bold=true&size=128", totalCorrect: 215, testsCompleted: 11, accuracy: 86, city: "Pokhara" },
+      { name: "Aayushma Bhandari", avatarUrl: "https://ui-avatars.com/api/?name=Aayushma+Bhandari&background=b45309&color=fff&bold=true&size=128", totalCorrect: 198, testsCompleted: 12, accuracy: 81, city: "Biratnagar" },
+      { name: "Dr. Ramesh Kushwaha", avatarUrl: "https://ui-avatars.com/api/?name=Ramesh+Kushwaha&background=15803d&color=fff&bold=true&size=128", totalCorrect: 184, testsCompleted: 10, accuracy: 84, city: "Janakpur" },
+      { name: "Niranjan Chaudhary", avatarUrl: "https://ui-avatars.com/api/?name=Niranjan+Chaudhary&background=7c3aed&color=fff&bold=true&size=128", totalCorrect: 172, testsCompleted: 9, accuracy: 79, city: "Butwal" },
+      { name: "Samikshya Devkota", avatarUrl: "https://ui-avatars.com/api/?name=Samikshya+Devkota&background=be185d&color=fff&bold=true&size=128", totalCorrect: 158, testsCompleted: 8, accuracy: 82, city: "Chitwan" }
     ]
   }
 };
@@ -710,7 +704,7 @@ export default function App() {
       name: "",
       avatarUrl: "",
       isLoggedIn: false,
-      purchasedSetIds: ["mec-ug-2023", "nmcle-2023", "ku-mcq-mock-1"] // Default unlocked sets
+      purchasedSetIds: [] // loaded from backend on login
     };
   });
 
@@ -723,11 +717,16 @@ export default function App() {
   const [activeSetId, setActiveSetId] = useState<string | null>(null);
   const [customWorkoutSet, setCustomWorkoutSet] = useState<QuestionSet | null>(null);
   const [customWorkoutMode, setCustomWorkoutMode] = useState<"timed" | "tutor" | null>(null);
-  
-  // Theme state
-  const [theme, setTheme] = useState<"dark" | "light">(() => {
-    return (localStorage.getItem("nepmed_theme") as "dark" | "light") || "dark";
+
+  // Sidebar collapsed state (desktop)
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
+    return localStorage.getItem("nepmed_sidebar_collapsed") === "true";
   });
+
+  const handleToggleSidebarCollapse = (collapsed: boolean) => {
+    setIsSidebarCollapsed(collapsed);
+    localStorage.setItem("nepmed_sidebar_collapsed", String(collapsed));
+  };
 
   // Settings & Search states
   const [searchQuery, setSearchQuery] = useState("");
@@ -759,15 +758,12 @@ export default function App() {
     setCookieAccepted(true);
   };
 
-  // Apply theme class to document
+  // Ensure pure unified dark mode across entire application
   useEffect(() => {
-    localStorage.setItem("nepmed_theme", theme);
-    if (theme === "light") {
-      document.documentElement.classList.add("light");
-    } else {
-      document.documentElement.classList.remove("light");
-    }
-  }, [theme]);
+    localStorage.removeItem("nepmed_theme");
+    document.documentElement.classList.remove("light");
+    document.documentElement.classList.add("dark");
+  }, []);
 
 
 
@@ -1107,6 +1103,7 @@ export default function App() {
     }
 
     setUserProfile({
+      id: "",
       email: "",
       name: "",
       avatarUrl: "",
@@ -1488,15 +1485,14 @@ export default function App() {
         dbExams={dbExams}
         dbSubjects={dbSubjects}
         dbTopics={dbTopics}
-        theme={theme}
-        setTheme={setTheme}
+        theme="dark"
       />
     );
   }
 
   // If user is not logged in, show LandingPage or LoginScreen
   if (!userProfile.isLoggedIn) {
-    if (activeScreen === "login") {
+    if (activeScreen === ("login" as any)) {
       return <LoginScreen onLoginSuccess={handleLoginSuccess} cmsContent={cmsContent} dbExams={dbExams} />;
     }
     return (
@@ -1508,18 +1504,9 @@ export default function App() {
         dbSubjects={dbSubjects}
         dbTopics={dbTopics}
         allSets={allSets}
-        onLoginClick={() => setActiveScreen("login")}
-        onSignUpClick={() => setActiveScreen("login")}
-        darkMode={theme === "dark"}
- onToggleTheme={() => {
-                setTheme(prev => {
-                  const next = prev === "dark" ? "light" : "dark";
-                  localStorage.setItem("nepmed_theme", next);
-                  return next;
-                });
-              }}      />
-
-      
+        onLoginClick={() => setActiveScreen("login" as any)}
+        onSignUpClick={() => setActiveScreen("login" as any)}
+      />
     );
   }
 
@@ -1544,6 +1531,8 @@ export default function App() {
         onLogout={handleLogout}
         isSidebarOpen={isSidebarOpen}
         setIsSidebarOpen={setIsSidebarOpen}
+        isCollapsed={isSidebarCollapsed}
+        setIsCollapsed={handleToggleSidebarCollapse}
         onEditProfile={() => setShowSettingsModal(true)}
         cmsContent={cmsContent}
         dbExams={dbExams}
@@ -1553,10 +1542,11 @@ export default function App() {
       <main className="flex-1 overflow-y-auto h-screen relative bg-slate-950/20">
         
         {/* Unified Responsive Header */}
-        <div className="bg-slate-900 border-b border-slate-800/80 px-4 landscape:px-8 lg:px-8 py-3.5 sticky top-0 z-30 flex items-center justify-between gap-4 shadow-md backdrop-blur-md">
+        <div className="bg-slate-900 border-b border-slate-800/80 px-4 sm:px-6 lg:px-8 py-3 sticky top-0 z-30 flex items-center justify-between gap-4 shadow-md backdrop-blur-md">
           
-          {/* Left section: Sidebar Hamburger (Mobile only) + Brand/App label */}
+          {/* Left section: Mobile Hamburger + Brand label */}
           <div className="flex items-center gap-2.5">
+            {/* Mobile Hamburger Button */}
             <button
               onClick={() => setIsSidebarOpen(true)}
               className="landscape:hidden lg:hidden p-1.5 text-slate-400 hover:text-white transition-colors cursor-pointer shrink-0"
@@ -1564,6 +1554,7 @@ export default function App() {
             >
               <Menu className="w-5.5 h-5.5" />
             </button>
+
             <div className="landscape:hidden lg:hidden flex items-center gap-1.5">
               <Stethoscope className="w-4.5 h-4.5 text-emerald-400" />
               <span className="font-extrabold text-white text-sm tracking-tight">{cmsContent.brandName}</span>
@@ -1666,18 +1657,8 @@ export default function App() {
             )}
           </div>
 
-          {/* Right Section: Theme Toggle and Profile Menu */}
+          {/* Right Section: Profile Menu */}
           <div className="flex items-center gap-3">
-            
-            {/* Theme Toggle Button */}
-            <button
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="p-1.5 rounded-xl bg-slate-950/60 hover:bg-slate-800/40 border border-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer flex items-center justify-center"
-              aria-label="Toggle Theme"
-            >
-              {theme === "dark" ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5 text-indigo-400" />}
-            </button>
-
             {/* Profile Dropdown Component */}
             <div className="relative">
               <button
@@ -1711,23 +1692,6 @@ export default function App() {
                     </div>
 
                     <div className="py-1">
-                      {/* Theme Toggle Button */}
-                      <button
-                        onClick={() => {
-                          setTheme(theme === "dark" ? "light" : "dark");
-                          setShowProfileDropdown(false);
-                        }}
-                        className="w-full text-left px-4 py-2 hover:bg-slate-800/40 text-slate-300 hover:text-white text-xs font-medium flex items-center justify-between transition-colors cursor-pointer"
-                      >
-                        <span className="flex items-center gap-2">
-                          {theme === "dark" ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-indigo-400" />}
-                          <span>Toggle {theme === "dark" ? "Light" : "Dark"} Theme</span>
-                        </span>
-                        <span className="text-[9px] font-bold uppercase text-slate-500 bg-slate-950 px-1.5 py-0.5 rounded border border-slate-800">
-                          {theme === "dark" ? "light" : "dark"}
-                        </span>
-                      </button>
-
                       {/* Profile Settings Button */}
                       <button
                         onClick={() => {
@@ -1854,7 +1818,7 @@ export default function App() {
           {/* Elegant small copyright reserve centered footer */}
           <footer className="mt-12 pt-6 border-t border-slate-900/60 text-center pb-4">
             <p className="text-[10px] text-slate-500 font-sans tracking-wide">
-              © 2026 PrepzaNepal Study Engine. All rights reserved.
+              © {new Date().getFullYear()} NepMed. All rights reserved.
             </p>
           </footer>
         </div>

@@ -1,7 +1,3 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
 
 import React, { useState, useMemo, useEffect } from "react";
 import { 
@@ -897,9 +893,9 @@ export default function PracticeView({
   }, [selectedSubject, selectedTopic, classifiedPool]);
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto px-4 py-6" id="subject-wise-practice-container">
+    <div className="w-full px-4 sm:px-6 py-5 space-y-6" id="subject-wise-practice-container">
       {/* Premium Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900 border border-slate-800 p-6 rounded-2xl relative overflow-hidden">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900 border border-slate-800 p-5 sm:p-6 rounded-2xl relative overflow-hidden">
         <div className="absolute right-0 top-0 w-80 h-80 bg-violet-500/5 rounded-full blur-3xl pointer-events-none" />
         <div className="relative z-10 space-y-1.5">
           <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-300 text-[10px] font-bold uppercase tracking-wider">

@@ -1,7 +1,3 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
 
 import React, { useState, useEffect } from "react";
 import { 
@@ -130,8 +126,8 @@ export default function AboutUsView({ userProfile, cmsContent, dbTeams = [] }: A
   const phoneVal = supportConfig.phoneText || supportConfig.PhoneText || cmsContent?.phoneText || "+977-9800000000\nMon - Fri: 10:00 AM - 5:00 PM";
 
   const defaultLabels = {
-    heroTitle: "About PrepzaNepal Editorial Board",
-    heroDescription: "PrepzaNepal is Nepal's premier full-stack interactive medical education engine. We are dedicated to providing high-yield multiple choice test questions, detailed clinical rationales, and memory mnemonics meticulously aligned with the standards of the Medical Education Commission (MEC) and the Nepal Medical Council (NMC) licensing examinations.",
+    heroTitle: "About NepMed Editorial Board",
+    heroDescription: "NepMed is Nepal's premier full-stack interactive medical education engine. We are dedicated to providing high-yield multiple choice test questions, detailed clinical rationales, and memory mnemonics meticulously aligned with the standards of the Medical Education Commission (MEC) and the Nepal Medical Council (NMC) licensing examinations.",
     teamTitle: "Our Eminent Editorial Board",
     contactTitle: "Organization Contact Info",
     contactDescription: "",
@@ -151,10 +147,10 @@ export default function AboutUsView({ userProfile, cmsContent, dbTeams = [] }: A
     }
   });
   return (
-    <div id="about-us-container" className="space-y-8 animate-in fade-in duration-200">
+    <div id="about-us-container" className="w-full px-4 sm:px-6 py-5 space-y-6 animate-in fade-in duration-200">
       
       {/* Hero Header */}
-      <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 md:p-8 flex flex-col md:flex-row items-center gap-6 shadow-sm relative overflow-hidden">
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6 flex flex-col md:flex-row items-center gap-6 shadow-sm relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-2xl pointer-events-none" />
         
         <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-2xl shrink-0">
@@ -292,7 +288,7 @@ export default function AboutUsView({ userProfile, cmsContent, dbTeams = [] }: A
                     value={ticketEmail} 
                     onChange={(e) => setTicketEmail(e.target.value)}
                     className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-white focus:outline-none focus:border-emerald-500"
-                    placeholder="you@PrepzaNepal.app"
+                    placeholder="you@nepmed.com.np"
                   />
                 </div>
               </div>

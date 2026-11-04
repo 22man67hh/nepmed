@@ -1,7 +1,3 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
 
 import React, { useState, useMemo, useEffect } from "react";
 import { 
@@ -31,8 +27,6 @@ import {
   BrainCircuit, 
   Flame, 
   HelpCircle, 
-  Moon, 
-  Sun, 
   Menu, 
   X, 
   Lock, 
@@ -48,10 +42,16 @@ import {
   ChevronDown,
   UserCheck,
   Share2,
-  Play
+  Play,
+  RotateCcw,
+  XCircle,
+  PenTool,
+  Pencil,
+  Book,
+  FileEdit,
+  PenLine
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { features } from "process";
 
 interface LandingPageProps {
   cmsContent: CMSContent;
@@ -87,6 +87,55 @@ const EXAM_THUMBNAILS: Record<string, string> = {
   "mph-msph": "https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=800&q=80",
   "loksewa-pho": "https://images.unsplash.com/photo-1505751172876-fa1923c5c528?auto=format&fit=crop&w=800&q=80"
 };
+
+// High-yield authentic sample questions for the interactive Hero simulator
+const HERO_SAMPLE_QUESTIONS = [
+  {
+    examSlug: "nmcle",
+    examBadge: "NMCLE Licensing Board",
+    subject: "Emergency Medicine • Pharmacology",
+    qNumber: "42 of 150",
+    timeRemaining: "01:14:20",
+    question: "A 24-year-old female presents with acute severe anaphylaxis following an intramuscular antibiotic. What is the immediate first-line drug and route of administration?",
+    options: [
+      { text: "Hydrocortisone 200 mg slow IV", correct: false, note: "Corticosteroids take 4-6 hours to act. They do not reverse acute airway edema or shock." },
+      { text: "Adrenaline 1:1,000 (0.5 mg) IM in anterolateral thigh", correct: true, note: "First-line life-saving agent. Rapidly reverses vasodilation, stabilizes mast cells, and relieves laryngeal edema." },
+      { text: "Chlorpheniramine 10 mg slow IV", correct: false, note: "Antihistamines are strictly second-line symptomatic relief and do not stabilize vascular collapse." },
+      { text: "Nebulized Salbutamol 5 mg only", correct: false, note: "Salbutamol only addresses bronchospasm, not systemic distributive shock." }
+    ],
+    highYieldFact: "Adrenaline IM (vastus lateralis) is the ONLY drug that halts anaphylaxis progression. Repeat every 5-15 mins if refractory."
+  },
+  {
+    examSlug: "mec-ug",
+    examBadge: "MECEE-UG Entrance (MBBS/BDS)",
+    subject: "Clinical Anatomy",
+    qNumber: "18 of 200",
+    timeRemaining: "02:45:10",
+    question: "A displaced fracture of the surgical neck of the humerus most directly jeopardizes which nerve and vascular bundle?",
+    options: [
+      { text: "Radial nerve and Profunda brachii artery", correct: false, note: "These wrap around the midshaft spiral groove, vulnerable in humerus shaft fractures." },
+      { text: "Axillary nerve and Posterior circumflex humeral artery", correct: true, note: "Both structures exit the quadrangular space and wind tightly around the surgical neck." },
+      { text: "Median nerve and Brachial artery", correct: false, note: "At risk in pediatric supracondylar fractures of the humerus." },
+      { text: "Ulnar nerve and Superior ulnar collateral artery", correct: false, note: "Passes posterior to the medial epicondyle ('funny bone' region)." }
+    ],
+    highYieldFact: "Axillary nerve damage leads to loss of shoulder abduction (deltoid) and sensory loss over the 'regimental badge' patch."
+  },
+  {
+    examSlug: "mec-pg",
+    examBadge: "MECEE-PG Entrance (MD/MS)",
+    subject: "General Surgery & CSQ",
+    qNumber: "87 of 200",
+    timeRemaining: "01:30:00",
+    question: "Which of the following prognostic parameters in Ranson's Criteria for acute pancreatitis is assessed AT ADMISSION (0 hours)?",
+    options: [
+      { text: "Serum Calcium < 8.0 mg/dL", correct: false, note: "Assessed within 48 hours to gauge saponification & third-spacing." },
+      { text: "Fall in Hematocrit > 10%", correct: false, note: "Measured within 48 hours to evaluate fluid resuscitation." },
+      { text: "White Blood Cell count (WBC) > 16,000/mm³", correct: true, note: "Admission parameters (GAWLE): Glucose > 200, Age > 55, WBC > 16,000, LDH > 350, AST > 250." },
+      { text: "Arterial PO2 < 60 mmHg", correct: false, note: "Monitored at 48 hours to track acute lung injury / ARDS." }
+    ],
+    highYieldFact: "Mnemonic at Admission: GAWLE (Glucose, Age, WBC, LDH, AST). At 48 hrs: C-HOBBS (Calcium, Hct, Oxygen, BUN, Base deficit, Sequestration)."
+  }
+];
 
 interface GroupedSubject {
   subjectName: string;
@@ -160,28 +209,8 @@ export default function LandingPage({
   dbSubjects = [],
   dbTopics = []
 }: LandingPageProps) {
-  // Theme state persistence in localStorage
-  const [internalDarkMode, setInternalDarkMode] = useState<boolean>(() => {
-    const saved = localStorage.getItem("nepmed_theme");
-    if (saved !== null) {
-      return saved === "dark";
-    }
-    return true;
-  });
-
-  const isDark = externalDarkMode !== undefined ? externalDarkMode : internalDarkMode;
-
-  const toggleTheme = () => {
-    if (externalToggleTheme) {
-      externalToggleTheme();
-    } else {
-      setInternalDarkMode(prev => {
-        const next = !prev;
-        localStorage.setItem("nepmed_theme", next ? "dark" : "light");
-        return next;
-      });
-    }
-  };
+  // Unified permanent dark theme
+  const isDark = true;
 
   const [activeTab, setActiveTab] = useState<Tab>('home');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -192,6 +221,11 @@ export default function LandingPage({
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [activeTestimonialIdx, setActiveTestimonialIdx] = useState(0);
+
+  // Interactive Hero Demo Question States
+  const [heroDemoExam, setHeroDemoExam] = useState<string>("nmcle");
+  const [heroQuestionIdx, setHeroQuestionIdx] = useState<number>(0);
+  const [heroSelectedOption, setHeroSelectedOption] = useState<number | null>(null);
 
   // Fallback Student Reviews / Testimonials
   const testimonialsList = useMemo(() => {
@@ -204,7 +238,7 @@ export default function LandingPage({
         name: "Dr. Bikram Adhikari",
         roleOrExam: "MECEE-PG Rank 4 (MD Radiology)",
         rating: 5,
-        review: "PrepZaa was the single most valuable tool during my MECEE-PG preparation. The high-yield explanations, pathology breakdowns by Dr. Sunil Subedi, and subject analytics helped me secure Rank 4!",
+        review: "NepMed was the single most valuable tool during my MECEE-PG preparation. The high-yield explanations, pathology breakdowns by Dr. Sunil Subedi, and subject analytics helped me secure Rank 4!",
         verified: true,
         date: "2026"
       },
@@ -231,7 +265,7 @@ export default function LandingPage({
         name: "Anjali Shrestha",
         roleOrExam: "Loksewa Staff Nurse 5th Level (Rank 1)",
         rating: 5,
-        review: "PrepZaa's provincial PSC sets for Bagmati and Koshi were identical to actual exam pattern questions. Essential for all Loksewa nurse aspirants!",
+        review: "NepMed's provincial PSC sets for Bagmati and Koshi were identical to actual exam pattern questions. Essential for all Loksewa nurse aspirants!",
         verified: true,
         date: "2026"
       }
@@ -253,14 +287,14 @@ export default function LandingPage({
     return [
       {
         id: "faq-1",
-        question: "How are PrepZaa question banks aligned with official MEC & NMCLE syllabi?",
-        answer: "All question sets, past papers, and mock exams on PrepZaa are meticulously audited and curated by our medical editorial team led by Founder Dr. Sunil Subedi according to the official syllabus blueprints released by the Medical Education Commission (MEC), Nepal Medical Council (NMC), and Public Service Commission (Loksewa).",
+        question: "How are NepMed question banks aligned with official MEC & NMCLE syllabi?",
+        answer: "All question sets, past papers, and mock exams on NepMed are meticulously audited and curated by our medical editorial team led by Founder Dr. Sunil Subedi according to the official syllabus blueprints released by the Medical Education Commission (MEC), Nepal Medical Council (NMC), and Public Service Commission (Loksewa).",
         category: "Syllabus & Coverage"
       },
       {
         id: "faq-2",
         question: "Can I practice question sets on mobile devices?",
-        answer: "Yes! PrepZaa is fully responsive and optimized for smartphones, tablets, and laptops. You can practice timed MCQs, view high-yield notes, and read AI explanations on any browser smoothly.",
+        answer: "Yes! NepMed is fully responsive and optimized for smartphones, tablets, and laptops. You can practice timed MCQs, view high-yield notes, and read AI explanations on any browser smoothly.",
         category: "Platform Access"
       },
       {
@@ -278,7 +312,7 @@ export default function LandingPage({
       {
         id: "faq-5",
         question: "Are there free trial modules or past papers available?",
-        answer: "Yes! PrepZaa provides free past year papers and mock tests for every target exam (MECEE-PG, NMCLE, MECEE-BL, IOE, Loksewa) so candidates can test the platform before upgrading to Premium.",
+        answer: "Yes! NepMed provides free past year papers and mock tests for every target exam (MECEE-PG, NMCLE, MECEE-BL, IOE, Loksewa) so candidates can test the platform before upgrading to Premium.",
         category: "Free Access"
       },
       {
@@ -360,8 +394,91 @@ export default function LandingPage({
   ];
 
   return (
-    <div className={`min-h-screen font-sans transition-colors duration-200 ${isDark ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'}`}>
+    <div className={`min-h-screen font-sans relative overflow-x-hidden transition-colors duration-200 ${
+      isDark 
+        ? 'bg-slate-950 text-slate-100' 
+        : 'bg-gradient-to-b from-[#f8fafc] via-[#f1f5f9]/85 to-[#ecfdf5]/30 text-slate-900'
+    }`}>
       
+      {/* ================= BACKGROUND ACADEMIC & NOTEBOOK TEXTURE LAYER ================= */}
+      <div className="fixed inset-0 pointer-events-none select-none overflow-hidden z-0">
+        
+        {/* Graph Paper / Notebook Grid Pattern */}
+        <div 
+          className="absolute inset-0 opacity-[0.035] dark:opacity-[0.045]" 
+          style={{
+            backgroundImage: `radial-gradient(currentColor 1.2px, transparent 1.2px)`,
+            backgroundSize: '28px 28px'
+          }} 
+        />
+        
+        {/* Soft Ambient Colorful Radial Glows */}
+        <div className="absolute -top-40 -right-40 w-[550px] h-[550px] bg-emerald-400/10 dark:bg-emerald-500/10 rounded-full blur-[120px]" />
+        <div className="absolute top-1/3 -left-40 w-[500px] h-[500px] bg-teal-400/10 dark:bg-teal-500/10 rounded-full blur-[140px]" />
+        <div className="absolute bottom-1/4 -right-40 w-[600px] h-[600px] bg-emerald-500/10 dark:bg-emerald-600/10 rounded-full blur-[140px]" />
+
+        {/* 1. Top Right: Open Book & Fountain Pen floating behind hero */}
+        <div className="absolute top-24 right-[3%] text-emerald-800/10 dark:text-emerald-400/10 transform rotate-12 transition-transform duration-700 pointer-events-none">
+          <div className="relative">
+            <BookOpen className="w-56 h-56 stroke-[1.1]" />
+            <div className="absolute -bottom-6 -right-6 transform -rotate-45 text-emerald-700/15 dark:text-emerald-300/15">
+              <PenTool className="w-28 h-28 stroke-[1.2]" />
+            </div>
+          </div>
+        </div>
+
+        {/* 2. Top Left: Writing Pencil & Notepad behind Header/Hero left */}
+        <div className="absolute top-36 left-[2%] text-slate-700/10 dark:text-slate-300/10 transform -rotate-12 pointer-events-none">
+          <div className="relative">
+            <FileEdit className="w-40 h-40 stroke-[1.1]" />
+            <div className="absolute -top-4 -right-4 transform rotate-45 text-emerald-600/15 dark:text-emerald-400/15">
+              <Pencil className="w-20 h-20 stroke-[1.3]" />
+            </div>
+          </div>
+        </div>
+
+        {/* 3. Middle Left: Stethoscope & Open Study Atlas behind Exams section */}
+        <div className="absolute top-[35%] left-[3%] text-emerald-800/10 dark:text-emerald-400/10 transform rotate-6 pointer-events-none">
+          <div className="relative">
+            <Book className="w-48 h-48 stroke-[1.1]" />
+            <div className="absolute top-1/4 -right-8 transform -rotate-12 text-teal-700/15 dark:text-teal-400/15">
+              <Stethoscope className="w-32 h-32 stroke-[1.2]" />
+            </div>
+          </div>
+        </div>
+
+        {/* 4. Middle Right: Drafting Pen & Checklist Sheet behind Question Sets */}
+        <div className="absolute top-[48%] right-[2%] text-slate-700/10 dark:text-slate-300/10 transform -rotate-12 pointer-events-none">
+          <div className="relative">
+            <FileCheck className="w-44 h-44 stroke-[1.1]" />
+            <div className="absolute -bottom-4 -left-6 transform rotate-45 text-emerald-700/15 dark:text-emerald-300/15">
+              <PenLine className="w-28 h-28 stroke-[1.3]" />
+            </div>
+          </div>
+        </div>
+
+        {/* 5. Lower Left: Graduation Cap & Book Stack behind Reviews & FAQs */}
+        <div className="absolute top-[70%] left-[2%] text-emerald-800/10 dark:text-emerald-400/10 transform -rotate-6 pointer-events-none">
+          <div className="relative">
+            <GraduationCap className="w-44 h-44 stroke-[1.1]" />
+            <div className="absolute -bottom-4 -right-4 transform rotate-12 text-slate-700/10 dark:text-slate-400/10">
+              <BookOpen className="w-36 h-36 stroke-[1.2]" />
+            </div>
+          </div>
+        </div>
+
+        {/* 6. Lower Right: Fountain Pen & Certificate Scroll */}
+        <div className="absolute top-[82%] right-[4%] text-emerald-800/10 dark:text-emerald-400/10 transform rotate-12 pointer-events-none">
+          <div className="relative">
+            <BookMarked className="w-48 h-48 stroke-[1.1]" />
+            <div className="absolute -top-6 -left-6 transform -rotate-45 text-teal-700/15 dark:text-teal-400/15">
+              <PenTool className="w-24 h-24 stroke-[1.3]" />
+            </div>
+          </div>
+        </div>
+
+      </div>
+
       {/* 1. TOP STICKY NAVBAR */}
       <header className={`sticky top-0 z-50 border-b backdrop-blur-md transition-colors duration-200 ${
         isDark 
@@ -381,14 +498,8 @@ export default function LandingPage({
             <div>
               <div className="flex items-center gap-1.5">
                 <span className="font-extrabold text-xl tracking-tight leading-tight">
-                  {cmsContent?.brandName?.toLowerCase() === "prepzaa" ? (
-                    <>
-                      <span className={isDark ? "text-white" : "text-slate-900"}>Prep</span>
-                      <span className="text-emerald-500">Zaa</span>
-                    </>
-                  ) : (
-                    <span className={isDark ? "text-white" : "text-slate-900"}>{cmsContent?.brandName || "PrepZaa"}</span>
-                  )}
+                  <span className={isDark ? "text-white" : "text-slate-900"}>Nep</span>
+                  <span className="text-emerald-500">Med</span>
                 </span>
               </div>
             </div>
@@ -421,22 +532,8 @@ export default function LandingPage({
             })}
           </nav>
 
-          {/* Right Header Controls: Theme Switcher, Log In, Sign Up */}
+          {/* Right Header Controls: Log In, Sign Up */}
           <div className="flex items-center gap-2 sm:gap-3">
-            {/* Theme Toggle Button (Persists across navigation) */}
-            <button
-              onClick={toggleTheme}
-              aria-label="Toggle Theme"
-              className={`p-2 rounded-xl border transition-all ${
-                isDark 
-                  ? 'bg-slate-900 border-slate-800 text-amber-400 hover:bg-slate-800' 
-                  : 'bg-white border-slate-300 text-slate-800 hover:bg-slate-100 shadow-sm'
-              }`}
-              title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
-            >
-              {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            </button>
-
             {/* Log In Button */}
             <button
               onClick={onLoginClick}
@@ -525,92 +622,307 @@ export default function LandingPage({
         {activeTab === 'home' && (
           <div className="space-y-16 sm:space-y-24">
             
-            {/* HERO SECTION WITH IMMERSIVE BACKGROUND */}
-            <div className="relative rounded-3xl overflow-hidden border border-slate-700/80 shadow-2xl bg-slate-950 text-white">
-              {/* Background Photo Template of Multi-Disciplinary Professionals (Doctors, Engineers, Nurses, Officers) */}
-              <div className="absolute inset-0 z-0">
-                <img 
-                  src="https://t4.ftcdn.net/jpg/01/80/09/15/360_F_180091564_ROmI0vsrelco6h4P6enGBP2DS0n55SFN.jpg" 
-                  alt="Doctors, engineers, nurses and professionals team" 
-                  className="w-full h-full object-cover object-center transform scale-100 opacity-90"
-                  referrerPolicy="no-referrer"
-                />
-                {/* Deep Dark Vignette Overlay for crisp light text contrast in both Light and Dark themes */}
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-slate-950/65" />
-                <div className="absolute inset-0 bg-radial-at-c from-emerald-500/20 via-slate-950/50 to-slate-950/85 pointer-events-none" />
-              </div>
+            {/* HERO SECTION — MODERN HIGH-CONVERTING EDTECH SPLIT LAYOUT */}
+            <div className={`relative rounded-3xl overflow-hidden border transition-all duration-300 ${
+              isDark 
+                ? 'bg-gradient-to-b from-slate-900/95 via-slate-900/90 to-slate-950 border-slate-800 shadow-2xl' 
+                : 'bg-gradient-to-b from-white via-slate-50 to-emerald-50/30 border-slate-200/90 shadow-xl'
+            }`}>
+              {/* Subtle architectural grid pattern & ambient radial glows */}
+              <div 
+                className="absolute inset-0 pointer-events-none opacity-[0.03] dark:opacity-[0.05]" 
+                style={{
+                  backgroundImage: `radial-gradient(currentColor 1px, transparent 1px)`,
+                  backgroundSize: '24px 24px'
+                }} 
+              />
+              <div className="absolute -top-32 -left-32 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+              <div className="absolute -bottom-32 -right-32 w-80 h-80 bg-teal-500/10 rounded-full blur-3xl pointer-events-none" />
 
-              {/* Foreground Hero Content with crisp light typography in all theme modes */}
-              <div className="relative z-10 text-center max-w-4xl mx-auto px-4 sm:px-8 py-10 sm:py-16 space-y-6 text-white">
-                <p className="text-xs sm:text-sm font-bold text-emerald-300 tracking-wide !text-emerald-300">
-                  MECEE-PG • IOE • NMCLE • MECEE-BL • Nursing • Loksewa
-                </p>
+              <div className="relative z-10 p-6 sm:p-10 lg:p-12">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
+                  
+                  {/* Left Column: Authentic Copy, Exam Switcher & Actions (6 Cols) */}
+                  <div className="lg:col-span-6 space-y-6 text-left">
+                    
+                    {/* Live Status Pill */}
+                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-semibold backdrop-blur-md bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                      <span>Updated 2026/2083 Syllabi: MECEE • NMCLE • Loksewa Health</span>
+                    </div>
 
-                <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight leading-tight sm:leading-none text-white !text-white drop-shadow-lg">
-                  {cmsContent?.heroTitle ? (
-                    <span dangerouslySetInnerHTML={{ __html: cmsContent.heroTitle.replace('Precision High-Yield MCQs', '<span class="bg-gradient-to-r from-emerald-300 via-teal-200 to-cyan-300 bg-clip-text text-transparent">Precision High-Yield MCQs</span>') }} />
-                  ) : (
-                    <>
-                      Master Your Competitive & Licensing Exams with{" "}
-                      <span className="bg-gradient-to-r from-emerald-300 via-teal-200 to-cyan-300 bg-clip-text text-transparent">
-                        Precision High-Yield MCQs
+                    {/* Headline */}
+                    <h1 className={`text-3xl sm:text-5xl lg:text-[2.75rem] font-black tracking-tight leading-[1.12] ${
+                      isDark ? 'text-white' : 'text-slate-900'
+                    }`}>
+                      Real entrance exam simulations.{' '}
+                      <span className="bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-400 bg-clip-text text-transparent">
+                        Zero guesswork.
                       </span>
-                    </>
-                  )}
-                </h1>
+                    </h1>
 
-                <p className="text-base sm:text-xl max-w-2xl mx-auto leading-relaxed font-medium text-slate-100 !text-slate-100 drop-shadow-md">
-                  {cmsContent?.heroDescription || "Nepal's premier preparation hub for Medical, Engineering, Nursing, Licensing, and Loksewa exams. Features official blueprints, instant AI tutors, full curriculum notes, and real-time timed test simulations."}
-                </p>
+                    {/* Subtitle */}
+                    <p className={`text-base sm:text-lg leading-relaxed max-w-xl font-normal ${
+                      isDark ? 'text-slate-300' : 'text-slate-600'
+                    }`}>
+                      {cmsContent?.heroDescription || "The dedicated preparation platform built specifically for Nepalese medical officers, MBBS/BDS entrance candidates, and licensing aspirants. Practice official past papers with realistic negative marking, timed mocks, and peer-reviewed clinical rationales."}
+                    </p>
 
-                {/* Action Buttons */}
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
-                  <button
-                    onClick={onSignUpClick}
-                    className="w-full sm:w-auto px-8 py-3.5 rounded-xl font-bold bg-gradient-to-r from-emerald-400 to-teal-300 text-slate-950 hover:from-emerald-300 hover:to-teal-200 shadow-xl shadow-emerald-500/25 flex items-center justify-center gap-2 text-base transform hover:-translate-y-0.5 transition-all"
-                  >
-                    <span>Start Free Practice</span>
-                    <ArrowRight className="w-4 h-4 text-slate-950" />
-                  </button>
-
-                  <button
-                    onClick={() => { setActiveTab('exams'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                    className="w-full sm:w-auto px-6 py-3.5 rounded-xl font-bold border backdrop-blur-md flex items-center justify-center gap-2 text-base transition-all border-slate-600 bg-slate-900/90 hover:bg-slate-800 text-white !text-white shadow-md"
-                  >
-                    <BookOpen className="w-4 h-4 text-emerald-400" />
-                    <span className="text-white !text-white">Explore Target Exams & Syllabus</span>
-                  </button>
-                </div>
-
-                {/* Quick Trust Highlights */}
-                <div className="pt-6 grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-3xl mx-auto text-left">
-                  {[
-                    { title: "25,000+", desc: "Verified MCQs & Notes", icon: BookMarked },
-                    { title: "Official", desc: "MEC, IOE & NMC Blueprints", icon: Target },
-                    { title: "AI Tutor", desc: "Instant Rationale & Mnemonics", icon: BrainCircuit },
-                    { title: "95.2%", desc: "Student Pass Rate", icon: Award }
-                  ].map((stat, idx) => {
-                    const Icon = stat.icon;
-                    return (
-                      <div 
-                        key={idx} 
-                        className="p-3.5 rounded-2xl border backdrop-blur-md bg-slate-900/90 border-slate-700 text-white shadow-lg flex items-center gap-3"
-                      >
-                        <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-300 shrink-0">
-                          <Icon className="w-4 h-4" />
-                        </div>
-                        <div>
-                          <div className="font-extrabold text-sm leading-tight text-white !text-white">
-                            {stat.title}
-                          </div>
-                          <div className="text-[11px] font-medium text-slate-200 !text-slate-200">
-                            {stat.desc}
-                          </div>
-                        </div>
+                    {/* Exam Target Quick-Switcher */}
+                    <div className="space-y-2 pt-1">
+                      <div className="flex items-center justify-between max-w-lg">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                          Select Target Board to Test:
+                        </span>
+                        <span className="text-[11px] text-emerald-500 font-semibold hidden sm:inline">
+                          Interactive demo below ⚡
+                        </span>
                       </div>
-                    );
-                  })}
+                      <div className="flex flex-wrap gap-2">
+                        {[
+                          { id: "nmcle", label: "NMCLE (Licensing)", sampleIdx: 0 },
+                          { id: "mec-ug", label: "MECEE-UG (MBBS/BDS)", sampleIdx: 1 },
+                          { id: "mec-pg", label: "MECEE-PG (MD/MS)", sampleIdx: 2 },
+                          { id: "loksewa", label: "Loksewa Medical Officer", sampleIdx: 0 }
+                        ].map(examTab => (
+                          <button
+                            key={examTab.id}
+                            onClick={() => {
+                              setHeroDemoExam(examTab.id);
+                              setHeroQuestionIdx(examTab.sampleIdx);
+                              setHeroSelectedOption(null);
+                            }}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                              heroDemoExam === examTab.id
+                                ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20'
+                                : isDark
+                                  ? 'bg-slate-800/80 hover:bg-slate-800 text-slate-300 border border-slate-700/80'
+                                  : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 shadow-sm'
+                            }`}
+                          >
+                            {examTab.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Primary CTA Buttons */}
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
+                      <button
+                        onClick={onSignUpClick}
+                        className="px-7 py-3.5 rounded-xl font-bold bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-lg shadow-emerald-500/25 flex items-center justify-center gap-2 text-sm sm:text-base transition-all duration-150 transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
+                      >
+                        <span>Start Free Diagnostic Mock</span>
+                        <ArrowRight className="w-4 h-4 text-slate-950" />
+                      </button>
+
+                      <button
+                        onClick={() => { setActiveTab('exams'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                        className={`px-5 py-3.5 rounded-xl font-semibold border flex items-center justify-center gap-2 text-sm sm:text-base transition-all cursor-pointer ${
+                          isDark 
+                            ? 'bg-slate-800/80 hover:bg-slate-800 border-slate-700 text-slate-200' 
+                            : 'bg-white hover:bg-slate-50 border-slate-300 text-slate-800 shadow-sm'
+                        }`}
+                      >
+                        <BookOpen className="w-4 h-4 text-emerald-500" />
+                        <span>View Syllabi & Weightages</span>
+                      </button>
+                    </div>
+
+                    {/* Key Trust Checkmarks */}
+                    <div className="pt-2 flex flex-wrap items-center gap-y-2 gap-x-5 text-xs font-medium text-slate-500 dark:text-slate-400">
+                      <span className="flex items-center gap-1.5">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" /> Negative marking (-0.25) simulation
+                      </span>
+                      <span className="flex items-center gap-1.5">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" /> 100% MEC & NMC syllabus blueprint
+                      </span>
+                      <span className="flex items-center gap-1.5">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" /> Khalti & eSewa instant digital access
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Right Column: Live Interactive MCQ Simulator Widget (6 Cols - Generous Width) */}
+                  <div className="lg:col-span-6 flex justify-center lg:justify-end w-full">
+                    {(() => {
+                      const curQ = HERO_SAMPLE_QUESTIONS[heroQuestionIdx] || HERO_SAMPLE_QUESTIONS[0];
+                      const hasAnswered = heroSelectedOption !== null;
+                      const isSelectedCorrect = hasAnswered && curQ.options[heroSelectedOption]?.correct;
+
+                      return (
+                        <div className={`w-full max-w-[560px] xl:max-w-[620px] p-5 sm:p-7 rounded-3xl border shadow-2xl relative backdrop-blur-md transition-all duration-200 ${
+                          isDark 
+                            ? 'bg-slate-950/95 border-slate-800 text-slate-100 shadow-emerald-950/20 ring-1 ring-slate-800/80' 
+                            : 'bg-white/95 border-slate-200 text-slate-900 shadow-emerald-500/10 ring-1 ring-slate-200/80'
+                        }`}>
+                          {/* Card Top Ribbon */}
+                          <div className="flex items-center justify-between pb-3.5 border-b border-slate-200 dark:border-slate-800">
+                            <div className="flex items-center gap-2">
+                              <span className="px-2 py-0.5 rounded text-[10px] font-extrabold tracking-wider uppercase bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+                                {curQ.examBadge}
+                              </span>
+                              <span className="text-[11px] font-semibold text-slate-400">Q. {curQ.qNumber}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">
+                              <Clock className="w-3.5 h-3.5" />
+                              <span>{curQ.timeRemaining}</span>
+                            </div>
+                          </div>
+
+                          {/* Subject Pill */}
+                          <div className="pt-3 pb-1 flex items-center justify-between text-[11px] text-slate-400 font-medium">
+                            <span className="flex items-center gap-1">
+                              <Target className="w-3 h-3 text-emerald-500" />
+                              {curQ.subject}
+                            </span>
+                            <span className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">
+                              4-Option MCQ
+                            </span>
+                          </div>
+
+                          {/* Question Stem */}
+                          <div className="py-3">
+                            <p className="text-xs sm:text-sm font-semibold leading-relaxed">
+                              {curQ.question}
+                            </p>
+                          </div>
+
+                          {/* Interactive Option List */}
+                          <div className="space-y-2 pt-1">
+                            {curQ.options.map((opt, oIdx) => {
+                              const letter = String.fromCharCode(65 + oIdx);
+                              const isSelected = heroSelectedOption === oIdx;
+                              
+                              let optionStyle = isDark
+                                ? 'border-slate-800 bg-slate-900/60 hover:bg-slate-800/80 hover:border-slate-700 text-slate-300'
+                                : 'border-slate-200 bg-slate-50 hover:bg-slate-100 hover:border-slate-300 text-slate-700';
+
+                              if (hasAnswered) {
+                                if (opt.correct) {
+                                  optionStyle = 'border-emerald-500/80 bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 font-semibold ring-1 ring-emerald-500/30';
+                                } else if (isSelected && !opt.correct) {
+                                  optionStyle = 'border-red-500/80 bg-red-500/15 text-red-600 dark:text-red-300 font-semibold ring-1 ring-red-500/30';
+                                } else {
+                                  optionStyle = isDark
+                                    ? 'border-slate-800/60 bg-slate-900/30 text-slate-500 opacity-60'
+                                    : 'border-slate-100 bg-slate-50/60 text-slate-400 opacity-60';
+                                }
+                              }
+
+                              return (
+                                <button
+                                  key={oIdx}
+                                  onClick={() => setHeroSelectedOption(oIdx)}
+                                  className={`w-full text-left p-2.5 rounded-xl border text-xs flex items-center justify-between transition-all cursor-pointer ${optionStyle}`}
+                                >
+                                  <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                                    <span className={`w-5 h-5 shrink-0 rounded-md flex items-center justify-center text-[10px] font-bold ${
+                                      hasAnswered && opt.correct
+                                        ? 'bg-emerald-500 text-slate-950 font-black'
+                                        : hasAnswered && isSelected && !opt.correct
+                                          ? 'bg-red-500 text-white font-black'
+                                          : isDark ? 'bg-slate-800 text-slate-400' : 'bg-slate-200 text-slate-600'
+                                    }`}>
+                                      {letter}
+                                    </span>
+                                    <span className="truncate leading-snug">{opt.text}</span>
+                                  </div>
+
+                                  {hasAnswered && opt.correct && (
+                                    <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                                  )}
+                                  {hasAnswered && isSelected && !opt.correct && (
+                                    <XCircle className="w-4 h-4 text-red-500 shrink-0" />
+                                  )}
+                                </button>
+                              );
+                            })}
+                          </div>
+
+                          {/* Dynamic Feedback or Prompt */}
+                          {!hasAnswered ? (
+                            <div className="mt-3 pt-3 border-t border-dashed border-slate-200 dark:border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
+                              <span className="flex items-center gap-1.5">
+                                <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                                Click any option above to test yourself live
+                              </span>
+                              <span className="font-mono text-[10px] uppercase tracking-wider text-slate-500">
+                                -0.25 Active
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="mt-3.5 pt-3 border-t border-slate-200 dark:border-slate-800/80 space-y-2.5">
+                              {/* Score Badge */}
+                              <div className="flex items-center justify-between">
+                                <span className={`text-[11px] font-extrabold uppercase px-2 py-0.5 rounded-md flex items-center gap-1 ${
+                                  isSelectedCorrect
+                                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                                    : 'bg-red-500/20 text-red-400 border border-red-500/30'
+                                }`}>
+                                  {isSelectedCorrect ? '✓ +1.00 Mark Awarded' : '✕ -0.25 Negative Marking Penalty'}
+                                </span>
+
+                                <button
+                                  onClick={() => {
+                                    setHeroQuestionIdx((prev) => (prev + 1) % HERO_SAMPLE_QUESTIONS.length);
+                                    setHeroSelectedOption(null);
+                                  }}
+                                  className="text-[11px] font-bold text-emerald-500 hover:text-emerald-400 flex items-center gap-1 cursor-pointer"
+                                >
+                                  <span>Next Question</span>
+                                  <ArrowRight className="w-3 h-3" />
+                                </button>
+                              </div>
+
+                              {/* Verified Rationale Card */}
+                              <div className={`p-3 rounded-xl border text-[11px] leading-relaxed ${
+                                isDark ? 'bg-slate-900/90 border-slate-800 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-700'
+                              }`}>
+                                <p className="font-bold text-emerald-500 mb-1 flex items-center gap-1">
+                                  <span>⚡ Verified Medical Rationale:</span>
+                                </p>
+                                <p className="text-slate-300 dark:text-slate-300">
+                                  {curQ.options[heroSelectedOption]?.note || curQ.options.find(o => o.correct)?.note}
+                                </p>
+                                <div className="mt-1.5 pt-1.5 border-t border-slate-700/50 text-[10px] text-amber-400/90 font-medium">
+                                  <span className="font-bold uppercase tracking-wider">High-Yield Takeaway: </span>
+                                  {curQ.highYieldFact}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
+                  </div>
+
                 </div>
+
+                {/* Bottom Proof Ribbon — Authentic Stats */}
+                <div className={`mt-10 sm:mt-12 pt-6 border-t grid grid-cols-2 sm:grid-cols-4 gap-4 ${
+                  isDark ? 'border-slate-800/80' : 'border-slate-200'
+                }`}>
+                  {[
+                    { label: "Curated MCQs", val: "12,500+", note: "Mapped to official blueprints" },
+                    { label: "Past Board Papers", val: "50+ Sets", note: "IOM, KU, BPKIHS & NMCLE" },
+                    { label: "Exam Simulations", val: "Realistic", note: "Timed with -0.25 penalty" },
+                    { label: "Candidate Rating", val: "4.9 / 5", note: "Over 2,500+ active aspirants" }
+                  ].map((stat, idx) => (
+                    <div key={idx} className="space-y-0.5 text-left">
+                      <div className="text-xl sm:text-2xl font-black text-emerald-500 dark:text-emerald-400 font-mono">
+                        {stat.val}
+                      </div>
+                      <div className={`text-xs font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                        {stat.label}
+                      </div>
+                      <div className="text-[11px] text-slate-400">
+                        {stat.note}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
               </div>
             </div>
 
@@ -758,7 +1070,7 @@ export default function LandingPage({
                   Student Reviews & Success Stories
                 </h2>
                 <p className={`text-xs sm:text-sm ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-                  Read how top rank holders and licensing candidates achieved their dream ranks with PrepZaa.
+                  Read how top rank holders and licensing candidates achieved their dream ranks with NepMed.
                 </p>
               </div>
 
@@ -782,14 +1094,14 @@ export default function LandingPage({
                         >
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-1 text-amber-400">
-                              {[...Array(item.rating || 5)].map((_, rIdx) => (
+                              {[...Array((item as any).rating || 5)].map((_, rIdx) => (
                                 <Star key={rIdx} className="w-4 h-4 fill-amber-400" />
                               ))}
                             </div>
                           </div>
 
                           <p className={`text-xs sm:text-sm leading-relaxed italic ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                            "{item.review}"
+                            "{(item as any).review || (item as any).text}"
                           </p>
                           <div className="pt-2 mt-2 border-t border-slate-200 dark:border-slate-800/60">
                             <div className={`font-bold text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>
@@ -876,7 +1188,7 @@ export default function LandingPage({
                   Frequently Asked Questions (FAQs)
                 </h2>
                 <p className={`text-xs sm:text-sm ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-                  Everything you need to know about PrepZaa question banks, syllabi coverage, AI tutor features, and digital payment methods.
+                  Everything you need to know about NepMed question banks, syllabi coverage, AI tutor features, and digital payment methods.
                 </p>
               </div>
 
@@ -1557,7 +1869,7 @@ export default function LandingPage({
                 {cmsContent?.referEarnConfig?.title || "Refer Friends, Earn Reward Points!"}
               </h2>
               <p className={`text-sm sm:text-base ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-                {cmsContent?.referEarnConfig?.subtitle || "Invite fellow medical, engineering, nursing, and licensing candidates to PrepZaa. Get rewarded instantly upon registration and subscription purchase."}
+                {cmsContent?.referEarnConfig?.subtitle || "Invite fellow medical, engineering, nursing, and licensing candidates to NepMed. Get rewarded instantly upon registration and subscription purchase."}
               </p>
               
               {/* Point Highlights Badges */}
@@ -1655,7 +1967,7 @@ export default function LandingPage({
                   <div className={`p-3.5 rounded-2xl text-xs font-mono mt-3 border ${
                     isDark ? 'bg-slate-950 border-slate-800 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-800'
                   }`}>
-                    {cmsContent?.referEarnConfig?.promoMessage || "Hey! Check out PrepZaa, Nepal's best app for Medical Entrance and Licensing MCQs. Use my code to register and get bonus access!"}
+                    {cmsContent?.referEarnConfig?.promoMessage || "Hey! Check out NepMed, Nepal's best app for Medical Entrance and Licensing MCQs. Use my code to register and get bonus access!"}
                   </div>
                 </div>
                 <button
@@ -1711,7 +2023,7 @@ export default function LandingPage({
                   onClick={onSignUpClick}
                   className="px-8 py-3 rounded-xl font-bold bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 shadow-lg shadow-emerald-500/25 cursor-pointer"
                 >
-                  Join PrepZaa to Start Referring
+                  Join NepMed to Start Referring
                 </button>
               </div>
             </div>
@@ -1723,13 +2035,13 @@ export default function LandingPage({
           <div className="space-y-12">
             <div className="text-center max-w-3xl mx-auto space-y-3">
               <h2 className={`text-3xl sm:text-4xl font-extrabold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                About {cmsContent?.brandName || "PrepZaa"}
+                About {cmsContent?.brandName || "NepMed"}
               </h2>
               <div className={`text-sm sm:text-base space-y-4 leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-                {(cmsContent?.aboutUsLabels?.heroDescription || `Prepzaa is a premier online learning and examination preparation platform dedicated to helping students and professionals achieve success in competitive entrance, licensing, postgraduate, and public service examinations. Built with a vision to make quality exam preparation accessible, affordable, and effective, Prepzaa brings together expert-curated content, high-yield question banks, mock tests, performance analytics, and structured learning resources in a single digital platform.
+                {(cmsContent?.aboutUsLabels?.heroDescription || `NepMed is a premier online learning and examination preparation platform dedicated to helping students and professionals achieve success in competitive entrance, licensing, postgraduate, and public service examinations. Built with a vision to make quality exam preparation accessible, affordable, and effective, NepMed brings together expert-curated content, high-yield question banks, mock tests, performance analytics, and structured learning resources in a single digital platform.
                 Our platform serves a diverse range of aspirants preparing for Medical Entrance, Medical and Dental Postgraduate Entrance (MD/MS/MDS), Nursing Entrance and Licensing Examinations, Engineering Entrance Examinations, Loksewa Competitive Examinations, and various professional licensing assessments. Every course and question bank is designed to reflect the latest examination patterns, helping learners focus on concepts that matter most.
-                At Prepzaa, we believe that success comes from smart preparation rather than endless studying. Our team of experienced educators, clinicians, subject experts, and technology professionals continuously work to develop evidence-based learning materials, detailed explanations, exam-focused notes, and realistic mock examinations that simulate actual test environments.
-                Through innovative technology, personalized learning insights, and a commitment to academic excellence, Prepzaa empowers learners to identify their strengths, address weaknesses, and maximize their performance. Whether you are preparing for your first entrance examination, pursuing postgraduate specialization, obtaining professional licensure, or competing for a Loksewa position, Prepzaa is your trusted partner throughout the journey.`).split('\n').filter(p => p.trim()).map((para, idx) => (
+                At NepMed, we believe that success comes from smart preparation rather than endless studying. Our team of experienced educators, clinicians, subject experts, and technology professionals continuously work to develop evidence-based learning materials, detailed explanations, exam-focused notes, and realistic mock examinations that simulate actual test environments.
+                Through innovative technology, personalized learning insights, and a commitment to academic excellence, NepMed empowers learners to identify their strengths, address weaknesses, and maximize their performance. Whether you are preparing for your first entrance examination, pursuing postgraduate specialization, obtaining professional licensure, or competing for a Loksewa position, NepMed is your trusted partner throughout the journey.`).split('\n').filter(p => p.trim()).map((para, idx) => (
                   <p key={idx} className="text-center">{para.trim()}</p>
                 ))}
               </div>
@@ -1872,7 +2184,7 @@ export default function LandingPage({
               </p>
               <div className="flex flex-wrap items-center justify-center gap-4 pt-2 text-xs font-bold">
                 <span className={`px-3.5 py-2 rounded-xl ${isDark ? 'bg-slate-800 text-slate-200' : 'bg-slate-100 text-slate-800'}`}>
-                  {cmsContent?.emailTitle || "Email"}: {cmsContent?.supportConfig?.emailText || cmsContent?.supportConfig?.EmailText || cmsContent?.emailText || "support@prepzaa.com"}
+                  {cmsContent?.emailTitle || "Email"}: {cmsContent?.supportConfig?.emailText || cmsContent?.supportConfig?.EmailText || cmsContent?.emailText || "support@nepmed.com.np"}
                 </span>
                 <span className="px-3.5 py-2 rounded-xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
                   {cmsContent?.phoneTitle || "WhatsApp / Viber"}: {cmsContent?.supportConfig?.phoneText || cmsContent?.supportConfig?.PhoneText || cmsContent?.phoneText || "+977-9860392540"}
@@ -1900,14 +2212,8 @@ export default function LandingPage({
                 <Stethoscope className="w-4.5 h-4.5 text-slate-900" />
               </div>
               <span className="font-extrabold text-lg tracking-tight">
-                {cmsContent?.brandName?.toLowerCase() === "prepzaa" ? (
-                  <>
-                    <span className={isDark ? "text-white" : "text-slate-900"}>Prep</span>
-                    <span className="text-emerald-500">Zaa</span>
-                  </>
-                ) : (
-                  <span className={isDark ? "text-white" : "text-slate-900"}>{cmsContent?.brandName || "PrepZaa"}</span>
-                )}
+                <span className={isDark ? "text-white" : "text-slate-900"}>Nep</span>
+                <span className="text-emerald-500">Med</span>
               </span>
             </div>
             <p className="text-xs leading-relaxed">
@@ -1972,7 +2278,7 @@ export default function LandingPage({
           isDark ? 'border-slate-800/80' : 'border-slate-300'
         }`}>
           <div>
-            © {new Date().getFullYear()} {cmsContent?.brandName || "PrepZaa"}. All rights reserved.
+            © {new Date().getFullYear()} {cmsContent?.brandName || "NepMed"}. All rights reserved.
           </div>
           <div className="flex gap-4 font-medium">
             <span 
@@ -2013,12 +2319,12 @@ export default function LandingPage({
               
               <h4 className="text-white font-bold font-sans">1. Acceptance of Terms</h4>
               <p>
-                By creating an account or accessing the PrepZaa Study Smart, you explicitly agree to bind yourself legally to these Terms and Conditions. These terms govern all uses of PrepZaa services, mock examinations, past papers, and AI-powered medical tutoring elements.
+                By creating an account or accessing the NepMed Study Smart, you explicitly agree to bind yourself legally to these Terms and Conditions. These terms govern all uses of NepMed services, mock examinations, past papers, and AI-powered medical tutoring elements.
               </p>
 
               <h4 className="text-white font-bold font-sans">2. Educational Purposes and Disclaimers</h4>
               <p>
-                PrepZaa is strictly an educational support system designed to help medical students and professionals prepare for board examinations (MECEE-BL, MECEE-PG, NMCLE, and Loksewa). All study explanations, MNEMONICS, and AI concepts are optimized for high-yield recall, but DO NOT constitute official medical diagnoses, clinical guidelines, or standard treatment advice.
+                NepMed is strictly an educational support system designed to help medical students and professionals prepare for board examinations (MECEE-BL, MECEE-PG, NMCLE, and Loksewa). All study explanations, MNEMONICS, and AI concepts are optimized for high-yield recall, but DO NOT constitute official medical diagnoses, clinical guidelines, or standard treatment advice.
               </p>
 
               <h4 className="text-white font-bold font-sans">3. Account Integrity & Verification</h4>
@@ -2028,7 +2334,7 @@ export default function LandingPage({
 
               <h4 className="text-white font-bold font-sans">4. Intellectual Property & Fair Use</h4>
               <p>
-                All original exam-style questions, Mnemonics, AI breakdown templates, and design configurations are property of PrepZaa. Sharing premium unlocked sets or duplicating content outside of personal study use is strictly forbidden.
+                All original exam-style questions, Mnemonics, AI breakdown templates, and design configurations are property of NepMed. Sharing premium unlocked sets or duplicating content outside of personal study use is strictly forbidden.
               </p>
             </div>
 
@@ -2066,7 +2372,7 @@ export default function LandingPage({
               
               <h4 className="text-white font-bold font-sans">1. Information We Collect</h4>
               <p>
-                When registering on PrepZaa, we securely store your email address, full name, age, gender/sex, and preferred board exam targets. This data is explicitly used to personalize study recommendations, generate practice reports, and calculate leaderboard standouts.
+                When registering on NepMed, we securely store your email address, full name, age, gender/sex, and preferred board exam targets. This data is explicitly used to personalize study recommendations, generate practice reports, and calculate leaderboard standouts.
               </p>
 
               <h4 className="text-white font-bold font-sans">2. Exam Tracking & Analytics</h4>

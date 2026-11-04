@@ -190,30 +190,28 @@ export default function SubscriptionView({
   };
 
   return (
-    <div id="subscription-container" className="max-w-6xl mx-auto px-4 py-8 space-y-8 text-white">
+    <div id="subscription-container" className="w-full px-4 sm:px-6 py-5 space-y-6 text-white">
       
       {/* Header Banner */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border border-slate-800 rounded-3xl p-6 md:p-10 shadow-2xl">
+      <div className="relative overflow-hidden bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-2xl">
         <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
         
-        <div className="max-w-3xl relative z-10 space-y-4">
+        <div className="max-w-3xl relative z-10 space-y-3">
           <div 
             id="subscription-banner-badge"
-            className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest"
-            style={{ color: "#000000", backgroundColor: "#d3e9e9" }}
+            className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest bg-emerald-500/10 border border-emerald-500/20 text-emerald-400"
           >
             <Sparkles className="w-3.5 h-3.5" />
             <span>Go Premium</span>
           </div>
           <h1 
             id="subscription-banner-title"
-            className="text-2xl md:text-4xl font-extrabold tracking-tight"
-            style={{ color: "#000000" }}
+            className="text-xl sm:text-3xl font-extrabold tracking-tight text-white"
           >
             {subConfig.title}
           </h1>
-          <p className="text-slate-300 text-sm md:text-base leading-relaxed">
+          <p className="text-slate-300 text-xs sm:text-sm leading-relaxed">
             {subConfig.subtitle}
           </p>
 
@@ -268,36 +266,35 @@ export default function SubscriptionView({
                 <button
                   key={plan.id}
                   onClick={() => setSelectedPlanId(plan.id)}
-                  className={`relative text-left p-5 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between min-h-[190px] ${
+                  className={`relative text-left p-5 rounded-xl border transition-all cursor-pointer flex flex-col justify-between min-h-[190px] ${
                     isSelected 
-                      ? "border-slate-950 shadow-lg ring-1 ring-slate-950/20" 
-                      : "border-slate-300 hover:border-slate-400"
+                      ? "border-emerald-500 bg-emerald-500/10 shadow-lg ring-1 ring-emerald-500/30 text-white" 
+                      : "bg-slate-900 border-slate-800 hover:border-slate-700 text-slate-300"
                   }`}
-                  style={{ backgroundColor: "#ccdce7" }}
                 >
-                  <span className="absolute top-3 right-3 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-950/10 text-slate-900 border border-slate-950/25">
+                  <span className="absolute top-3 right-3 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
                     {plan.duration ? `${plan.duration} Days` : "Unlimited"}
                   </span>
                   
                   <div className="space-y-1 mt-1">
-                    <h3 className="text-sm font-bold pr-12 text-slate-950">{plan.name}</h3>
-                    <p className="text-[11px] leading-normal pr-4 text-slate-700">{plan.description}</p>
+                    <h3 className="text-sm font-bold pr-12 text-white">{plan.name}</h3>
+                    <p className="text-[11px] leading-normal pr-4 text-slate-400">{plan.description}</p>
                   </div>
 
-                  <div className="pt-4 mt-4 border-t w-full flex items-baseline justify-between border-slate-300">
+                  <div className="pt-4 mt-4 border-t w-full flex items-baseline justify-between border-slate-800">
                     <div>
-                      <span className="text-[10px] block uppercase font-bold tracking-wider text-slate-600">Price</span>
-                      <span className="text-lg font-extrabold text-slate-950">NPR {plan.price}</span>
+                      <span className="text-[10px] block uppercase font-bold tracking-wider text-slate-400">Price</span>
+                      <span className="text-lg font-extrabold text-emerald-400">NPR {plan.price}</span>
                     </div>
                     {userProfile.activePackages?.some((ap: any) => ap.id === plan.id) ? (
-                      <span className="text-[10px] font-bold uppercase bg-emerald-500 text-white px-3 py-1 rounded-full">
+                      <span className="text-[10px] font-bold uppercase bg-emerald-500 text-slate-950 font-bold px-3 py-1 rounded-full">
                         Subscribed
                       </span>
                     ) : (
                       <div className={`w-6 h-6 rounded-full border flex items-center justify-center transition-all ${
                         isSelected 
-                          ? "border-slate-950 bg-slate-950 text-white" 
-                          : "border-slate-400"
+                          ? "border-emerald-500 bg-emerald-500 text-slate-950 font-bold" 
+                          : "border-slate-700"
                       }`}>
                         {isSelected && <CheckCircle2 className="w-4 h-4" />}
                       </div>

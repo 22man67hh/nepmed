@@ -1,7 +1,3 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
 
 import React, { useState } from "react";
 import { 
@@ -190,10 +186,10 @@ export default function ExamSpecificView({
   };
 
   return (
-    <div className="space-y-8 max-w-5xl mx-auto p-4 lg:p-6 text-slate-100">
+    <div className="w-full px-4 sm:px-6 py-5 space-y-6 text-slate-100">
       
       {/* Exam Page Header */}
-      <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-slate-900 border border-slate-800 p-5 sm:p-6 rounded-2xl relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl translate-x-1/3 -translate-y-1/3" />
         <div className="flex items-start gap-4 z-10">
           {onBack && (
@@ -319,7 +315,7 @@ export default function ExamSpecificView({
 
         {/* Set Cards List Grid */}
         {sortedSets.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {sortedSets.map((set) => {
               const isUnlocked = set.isFree === true || (set as any).is_free === true || (set as any).is_free === 1 || (set as any).is_free === "1" || hasActiveSub || userProfile.purchasedSetIds.includes(set.id);
               

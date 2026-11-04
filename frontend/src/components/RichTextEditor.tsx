@@ -1,7 +1,3 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
 
 import React, { useState, useRef, useEffect } from "react";
 import { 
@@ -993,7 +989,7 @@ export default function RichTextEditor({ value, onChange, placeholder }: RichTex
             contentEditable
             onInput={handleInput}
             onBlur={handleInput}
-            placeholder={placeholder || "Type description here... Standard formatting and layouts render visually live."}
+            data-placeholder={placeholder || "Type description here... Standard formatting and layouts render visually live."}
             className={`wysiwyg-editor w-full overflow-y-auto bg-slate-900 text-white p-4 text-xs focus:outline-none focus:bg-slate-900/40 transition-colors select-text ${isFullscreen ? "h-full flex-1 max-h-none text-sm" : "min-h-[160px] max-h-[350px]"}`}
             style={{ outline: "none" }}
           />

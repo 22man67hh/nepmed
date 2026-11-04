@@ -1,7 +1,3 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
 
 import React, { useState } from "react";
 import { 
@@ -117,12 +113,12 @@ export default function LoginScreen({ onLoginSuccess, cmsContent, dbExams = [] }
             id: data.user?.id || "user-1",
             email: data.user?.email || email.toLowerCase(),
             name: data.user?.name || email.split("@")[0].toUpperCase(),
-            avatarUrl: `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(email)}`,
+            avatarUrl: data.user?.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(data.user?.name || email)}&background=10b981&color=fff&bold=true&size=128`,
             isLoggedIn: true,
             role: data.user?.role || data.role || undefined,
             age: age || 24,
             sex: sex || "Male",
-            purchasedSetIds: ["mec-ug-2023", "nmcle-2023", "ku-mcq-mock-1"]
+            purchasedSetIds: data.user?.purchased_set_ids || []
           }, preferredExam);
         } else {
           setError(data.message || data.error || "Invalid credentials. Please check and try again.");
@@ -169,12 +165,12 @@ export default function LoginScreen({ onLoginSuccess, cmsContent, dbExams = [] }
               id: `user-${Date.now()}`,
               email: email.toLowerCase(),
               name: loginData.user?.name || name,
-              avatarUrl: `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(email)}`,
+              avatarUrl: loginData.user?.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(loginData.user?.name || name)}&background=10b981&color=fff&bold=true&size=128`,
               isLoggedIn: true,
               role: loginData.user?.role || loginData.role || undefined,
               age,
               sex,
-              purchasedSetIds: ["mec-ug-2023", "nmcle-2023", "ku-mcq-mock-1"]
+              purchasedSetIds: loginData.user?.purchased_set_ids || []
             }, preferredExam);
           } else {
             setOtpError(loginData.message || "Failed to log in automatically after verification. Please log in manually.");
@@ -263,10 +259,10 @@ export default function LoginScreen({ onLoginSuccess, cmsContent, dbExams = [] }
                   id: data.user?.id || `user-${Date.now()}`,
                   email: data.user?.email || "user@nepmed.edu",
                   name: data.user?.name || "Google User",
-                  avatarUrl: `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(data.user?.email || "google")}`,
+                  avatarUrl: data.user?.picture || data.user?.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(data.user?.name || "User")}&background=10b981&color=fff&bold=true&size=128`,
                   isLoggedIn: true,
                   role: data.user?.role || data.role || undefined,
-                  purchasedSetIds: ["mec-ug-2023", "nmcle-2023", "ku-mcq-mock-1"]
+                  purchasedSetIds: data.user?.purchased_set_ids || []
                 }, preferredExam);
               } else {
                 setError(data.message || "Failed to authenticate Google user on backend.");
@@ -305,7 +301,7 @@ export default function LoginScreen({ onLoginSuccess, cmsContent, dbExams = [] }
             <Stethoscope className="w-8 h-8 text-slate-950" />
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-white font-sans">
-            {cmsContent?.loginLabels?.brandName || "PrepzaNepal"}
+            {cmsContent?.loginLabels?.brandName || "NepMed"}
           </h1>
           <p className="text-slate-400 text-xs mt-1 text-center">
             {cmsContent?.loginLabels?.brandSubtitle || "Nepal's Premier Medical MCQs & License Prep Engine"}
@@ -460,7 +456,7 @@ export default function LoginScreen({ onLoginSuccess, cmsContent, dbExams = [] }
                   </span>
                   <input
                     type="email"
-                    placeholder="you@PrepzaNepal.app"
+                    placeholder="you@nepmed.com.np"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2.5 pl-10 pr-4 text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500 text-xs transition-colors"
@@ -662,12 +658,12 @@ export default function LoginScreen({ onLoginSuccess, cmsContent, dbExams = [] }
               
               <h4 className="text-white font-bold font-sans">1. Acceptance of Terms</h4>
               <p>
-                By creating an account or accessing the PrepzaNepal Study Engine, you explicitly agree to bind yourself legally to these Terms and Conditions.
+                By creating an account or accessing the NepMed Study Engine, you explicitly agree to bind yourself legally to these Terms and Conditions.
               </p>
 
               <h4 className="text-white font-bold font-sans">2. Educational Purposes and Disclaimers</h4>
               <p>
-                PrepzaNepal is strictly an educational support system designed to help medical students prepare for board examinations (MEC-UG, MEC-PG, NMCLE, and Loksewa).
+                NepMed is strictly an educational support system designed to help medical students prepare for board examinations (MEC-UG, MEC-PG, NMCLE, and Loksewa).
               </p>
 
               <h4 className="text-white font-bold font-sans">3. Account Integrity & Verification</h4>

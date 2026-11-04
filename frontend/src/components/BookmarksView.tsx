@@ -1,7 +1,3 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
 
 import React, { useState } from "react";
 import { Bookmark, Trash2, HelpCircle, GraduationCap, BookOpen, ChevronRight } from "lucide-react";
@@ -36,10 +32,10 @@ export default function BookmarksView({
   };
 
   return (
-    <div className="space-y-8 max-w-5xl mx-auto p-4 lg:p-6 text-slate-100">
+    <div className="w-full px-4 sm:px-6 py-5 space-y-6 text-slate-100">
       
       {/* Header */}
-      <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl">
+      <div className="bg-slate-900 border border-slate-800 p-5 sm:p-6 rounded-2xl">
         <h2 className="text-3xl font-black text-white tracking-tight flex items-center gap-3">
           <Bookmark className="w-8 h-8 text-amber-400 fill-current" />
           Saved Medical Questions

@@ -1,7 +1,18 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { ChevronRight, ArrowLeft, FileText, BookOpen, Layers, Bookmark, Plus, Trash2, PanelLeftClose, Lock } from 'lucide-react';
-import { LibrarySubject, LibraryArticle, PrepZaaLibrary, UserProfile } from '../types';
-import { checkIsPremium, getUnlockedArticleIdsForFree } from '../lib/subscriptionUtils';
+import { UserProfile } from '../types';
+
+// Inline type definitions for library structures
+interface LibraryArticle { id: string; title: string; content: string; isFree?: boolean; }
+interface LibrarySection { id: string; name: string; articles: LibraryArticle[]; }
+interface LibrarySubtopic { id: string; name: string; sections?: LibrarySection[]; articles?: LibraryArticle[]; }
+interface LibraryTopic { id: string; name: string; articles: LibraryArticle[]; subtopics?: LibrarySubtopic[]; }
+interface LibrarySubject { id: string; name: string; topics: LibraryTopic[]; }
+interface PrepZaaLibrary { subjects: LibrarySubject[]; }
+
+// Inline subscription utils stubs
+const checkIsPremium = (user: UserProfile) => !!(user.subscription || (user.activePackages && user.activePackages.length > 0));
+const getUnlockedArticleIdsForFree = (_lib?: any): string[] => [];
 
 export interface TreeNodeData {
   id: string;
@@ -87,8 +98,8 @@ export const LibrarySidebarView = ({
     return buildTree(subjects);
   }, [libraryData]);
 
-  const isPremium = checkIsPremium(userProfile, targetExam);
-  const unlockedArticleIds = useMemo(() => getUnlockedArticleIdsForFree(libraryData), [libraryData]);
+  const isPremium = checkIsPremium(userProfile);
+  const unlockedArticleIds = useMemo(() => getUnlockedArticleIdsForFree(), [libraryData]);
 
   const [localPath, setLocalPath] = useState<TreeNodeData[]>([]);
   const path = currentPath !== undefined ? currentPath : localPath;
@@ -329,7 +340,7 @@ export const LibrarySidebarView = ({
 
       <div className="flex-1 overflow-y-auto p-2 space-y-1">
         {currentNodes.map(node => {
-          const isArticleLocked = node.type === 'article' && !isPremium && !unlockedArticleIds.has(node.id);
+          const isArticleLocked = node.type === 'article' && !isPremium && !unlockedArticleIds.includes(node.id);
 
           return (
             <div

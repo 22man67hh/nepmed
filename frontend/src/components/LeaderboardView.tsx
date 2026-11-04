@@ -63,7 +63,7 @@ export default function LeaderboardView({
             return {
               id: user.id,
               name: user.name,
-              avatarUrl: `https://api.dicebear.com/7.x/adventurer/svg?seed=${user.name}`,
+              avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=10b981&color=fff&bold=true&size=128`,
               totalCorrect: Number(user.correct_answers),
               testsCompleted: Number(user.total_attempted), // Show total questions attempted here
               accuracy: acc,
@@ -116,10 +116,10 @@ export default function LeaderboardView({
   }
 
   return (
-    <div className="space-y-8 max-w-5xl mx-auto p-4 lg:p-6 text-slate-100">
+    <div className="w-full px-4 sm:px-6 py-5 space-y-6 text-slate-100">
       
       {/* Header Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-amber-950/20 p-6 rounded-2xl border border-slate-800 shadow-xl flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+      <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-amber-950/20 p-5 sm:p-6 rounded-2xl border border-slate-800 shadow-xl flex flex-col sm:flex-row justify-between sm:items-center gap-4">
         <div>
           <span className="text-amber-400 font-semibold text-xs tracking-wider uppercase block mb-1">
             {cmsContent.leaderboardConfig?.subTitleTag || "National Medical Exam Standings"}

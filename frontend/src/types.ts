@@ -1,7 +1,3 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
 
 export interface Question {
   id: string;
@@ -133,7 +129,7 @@ export interface CMSContent {
     name: string;
     role: string;
     institution: string;
-    avatar: string;
+    avatar?: string;
     specialty: string;
     enabled?: boolean;
     badge?: string;
@@ -214,9 +210,27 @@ export interface CMSContent {
     subtitle: string;
     pointsPerReg: number;
     pointsPerSub: number;
+    referredPointsPerReg?: number;
     promoMessage: string;
     rules: string[];
+    rewards?: { label: string; points: number }[];
   };
+  // Landing page extended fields
+  heroTitle?: string;
+  heroDescription?: string;
+  featuresTitle?: string;
+  featuresSubtitle?: string;
+  featuresList?: { icon?: string; title: string; description: string }[];
+  testimonials?: { id: string; name: string; roleOrExam: string; text: string; avatarUrl?: string }[];
+  faqs?: { id: string; question: string; answer: string }[];
+  contactTitle?: string;
+  contactDescription?: string;
+  emailTitle?: string;
+  emailText?: string;
+  phoneTitle?: string;
+  phoneText?: string;
+  officeText?: string;
+  supportConfig?: { email?: string; phone?: string; address?: string; officeText?: string; emailText?: string; EmailText?: string; phoneText?: string; PhoneText?: string; OfficeText?: string };
 }
 
 export type NodeType = 'concept' | 'task' | 'question' | 'quote' | 'code';

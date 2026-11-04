@@ -1,7 +1,3 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
 
 import React, { useState, useEffect } from "react";
 import { 
@@ -340,7 +336,7 @@ export default function AdminPanel({
   // CMS state bindings
   const [cmsBrandName, setCmsBrandName] = useState("");
   const [cmsLoginLabels, setCmsLoginLabels] = useState<any>({
-    brandName: "PrepzaNepal",
+    brandName: "NepMed",
     brandSubtitle: "Nepal's Premier Medical MCQs & License Prep Engine",
     signupGoogleButton: "Sign Up with Google",
     signinGoogleButton: "Sign In with Google",
@@ -419,7 +415,7 @@ export default function AdminPanel({
   });
 
   const [cmsSupportConfig, setCmsSupportConfig] = useState<any>({
-    supportEmail: "support@PrepzaNepal.edu.np",
+    supportEmail: "support@nepmed.com.np",
     phone: "+977-1-4412345",
     hours: "Sun - Fri, 9:00 AM - 5:00 PM (NST)",
     categories: [
@@ -453,10 +449,10 @@ export default function AdminPanel({
 
   const [cmsReferEarnConfig, setCmsReferEarnConfig] = useState<any>({
     title: "Refer Friends, Earn Cash & Points!",
-    subtitle: "Invite other medical students/doctors to PrepzaNepal. Get rewarded instantly upon registration and subscription purchase.",
+    subtitle: "Invite other medical students/doctors to NepMed. Get rewarded instantly upon registration and subscription purchase.",
     pointsPerReg: 50,
     pointsPerSub: 500,
-    promoMessage: "Hey! Check out PrepzaNepal, Nepal's best app for MECEE and Licensing MCQs. Use my code to register and get bonus access!",
+    promoMessage: "Hey! Check out NepMed, Nepal's best medical exam app for MECEE and Licensing MCQs. Use my code to register and get bonus access!",
     rules: [
       "Share your unique custom referral link or code with friends.",
       "Get 50 points as soon as they register their verified account.",
@@ -4704,7 +4700,7 @@ export default function AdminPanel({
                       ...cmsLeaderboardConfig,
                       competitors: [
                         ...comps,
-                        { name: "New Candidate", avatarUrl: "https://api.dicebear.com/7.x/adventurer/svg?seed=New", totalCorrect: 120, testsCompleted: 6, accuracy: 80, city: "Nepal" }
+                        { name: "New Candidate", avatarUrl: "https://ui-avatars.com/api/?name=New+Candidate&background=10b981&color=fff&bold=true&size=128", totalCorrect: 120, testsCompleted: 6, accuracy: 80, city: "Nepal" }
                       ]
                     });
                   }}

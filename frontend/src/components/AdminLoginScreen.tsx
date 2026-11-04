@@ -48,9 +48,10 @@ export default function AdminLoginScreen({ onLoginSuccess }: AdminLoginScreenPro
         }
 
         const profile: UserProfile = {
+          id: user?.id ? String(user.id) : `admin-${Date.now()}`,
           email: user?.email || email.toLowerCase(),
           name: user?.name || "Administrator",
-          avatarUrl: `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(email)}`,
+          avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(email)}&background=10b981&color=fff&bold=true&size=128`,
           isLoggedIn: true,
           role: "admin",
           purchasedSetIds: []
@@ -164,7 +165,7 @@ export default function AdminLoginScreen({ onLoginSuccess }: AdminLoginScreenPro
         </form>
 
         <div className="pt-2 text-center text-[10px] text-slate-500 font-sans">
-          <p>© {new Date().getFullYear()} PrepzaNepal Editorial Board. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} NepMed Editorial Board. All rights reserved.</p>
         </div>
       </div>
     </div>

@@ -1,7 +1,3 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
 
 import React, { useState, useEffect, useRef } from "react";
 import { 
@@ -137,7 +133,7 @@ export default function ForumView({ userProfile }: ForumViewProps) {
           category: newCategory,
           authorName: userProfile.name || "Anonymous Candidate",
           authorEmail: userProfile.email || "anonymous@nepmed.edu",
-          authorAvatar: userProfile.avatarUrl || `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(userProfile.name)}`
+          authorAvatar: userProfile.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(userProfile.name)}&background=10b981&color=fff&bold=true&size=128`
         })
       });
 
@@ -172,7 +168,7 @@ export default function ForumView({ userProfile }: ForumViewProps) {
           content: text,
           authorName: userProfile.name || "Anonymous Candidate",
           authorEmail: userProfile.email || "anonymous@nepmed.edu",
-          authorAvatar: userProfile.avatarUrl || `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(userProfile.name)}`
+          authorAvatar: userProfile.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(userProfile.name)}&background=10b981&color=fff&bold=true&size=128`
         })
       });
 
@@ -210,10 +206,10 @@ export default function ForumView({ userProfile }: ForumViewProps) {
   });
 
   return (
-    <div id="forum-container" className="space-y-6 animate-in fade-in duration-200">
+    <div id="forum-container" className="w-full px-4 sm:px-6 py-5 space-y-6 animate-in fade-in duration-200">
       
       {/* Forum Banner Header */}
-      <div className="bg-gradient-to-r from-slate-900 to-indigo-950 border border-slate-800 p-6 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xl">
+      <div className="bg-gradient-to-r from-slate-900 to-indigo-950 border border-slate-800 p-5 sm:p-6 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xl">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <span className="bg-emerald-500/10 text-emerald-400 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-500/20 uppercase tracking-widest flex items-center gap-1">
@@ -412,7 +408,7 @@ export default function ForumView({ userProfile }: ForumViewProps) {
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-center gap-3">
                     <img 
-                      src={thread.authorAvatar || `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(thread.authorName)}`} 
+                      src={thread.authorAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(thread.authorName)}&background=6366f1&color=fff&bold=true&size=64`} 
                       alt={thread.authorName} 
                       className="w-10 h-10 bg-slate-800 rounded-xl border border-slate-700/60 p-0.5"
                     />
@@ -486,7 +482,7 @@ export default function ForumView({ userProfile }: ForumViewProps) {
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-2">
                                 <img 
-                                  src={reply.authorAvatar || `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(reply.authorName)}`} 
+                                  src={reply.authorAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(reply.authorName)}&background=6366f1&color=fff&bold=true&size=64`} 
                                   alt={reply.authorName} 
                                   className="w-6.5 h-6.5 bg-slate-800 rounded-lg"
                                 />

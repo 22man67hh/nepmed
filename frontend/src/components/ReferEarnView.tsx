@@ -31,10 +31,10 @@ export default function ReferEarnView({
   // Use CMS config with beautiful default fallback values
   const referConfig = cmsContent.referEarnConfig || {
     title: "Refer Friends, Earn Cash & Points!",
-    subtitle: "Invite other medical students/doctors to PrepzaNepal. Get rewarded instantly upon registration and subscription purchase.",
+    subtitle: "Invite other medical students/doctors to NepMed. Get rewarded instantly upon registration and subscription purchase.",
     pointsPerReg: 50,
     pointsPerSub: 500,
-    promoMessage: "Hey! Check out PrepzaNepal, Nepal's best app for MECEE and Licensing MCQs. Use my code to register and get bonus access!",
+    promoMessage: "Hey! Check out NepMed, Nepal's best medical exam app for MECEE and Licensing MCQs. Use my code to register and get bonus access!",
     rules: [
       "Share your unique custom referral link or code with friends.",
       "Get 50 points as soon as they register their verified account.",
@@ -81,7 +81,7 @@ export default function ReferEarnView({
   const pointsBalance = userProfile.rewardPoints ?? 100;
   const referLogs = userProfile.referLog || [];
 
-  const shareLink = `https://PrepzaNepal.edu.np/register?ref=${referralCode}`;
+  const shareLink = `https://nepmed.com.np/register?ref=${referralCode}`;
 
   const handleCopyCode = () => {
     navigator.clipboard.writeText(referralCode);
@@ -180,31 +180,31 @@ export default function ReferEarnView({
   };
 
   return (
-    <div id="refer-earn-container" className="max-w-6xl mx-auto px-4 py-8 space-y-8 text-white">
+    <div id="refer-earn-container" className="w-full px-4 sm:px-6 py-5 space-y-6 text-white">
       
       {/* Hero Banner Section */}
-      <div className="relative overflow-hidden bg-[#dff1e8] text-[#0f172a] border border-emerald-200/60 rounded-3xl p-6 md:p-10 shadow-lg">
+      <div className="relative overflow-hidden bg-gradient-to-r from-slate-900 via-emerald-950/30 to-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-lg">
         <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl pointer-events-none" />
         
-        <div className="max-w-3xl relative z-10 space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-600/10 border border-emerald-600/20 rounded-full text-xs font-black text-emerald-800 uppercase tracking-widest">
+        <div className="max-w-3xl relative z-10 space-y-3">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-xs font-black text-emerald-400 uppercase tracking-widest">
             <Gift className="w-3.5 h-3.5" />
             <span>Referral Program</span>
           </div>
-          <h1 className="text-2xl md:text-4xl font-extrabold tracking-tight text-[#0f172a]">
+          <h1 className="text-xl sm:text-3xl font-extrabold tracking-tight text-white">
             {referConfig.title}
           </h1>
-          <p className="text-slate-700 text-sm md:text-base leading-relaxed">
+          <p className="text-slate-300 text-xs sm:text-sm leading-relaxed">
             {referConfig.subtitle}
           </p>
 
           <div className="flex flex-wrap gap-4 mt-2">
-            <div className="bg-white/60 backdrop-blur-sm border border-emerald-200/50 rounded-2xl px-4 py-3 flex items-center gap-3 shadow-sm">
-              <Coins className="w-8 h-8 text-amber-600 shrink-0" />
+            <div className="bg-slate-950/60 backdrop-blur-sm border border-slate-800 rounded-xl px-4 py-3 flex items-center gap-3 shadow-sm">
+              <Coins className="w-7 h-7 text-amber-400 shrink-0" />
               <div>
-                <p className="text-[10px] text-slate-600 font-bold uppercase tracking-wider leading-tight">Your Reward Points</p>
-                <p className="text-lg font-black text-emerald-800">{pointsBalance} Points</p>
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider leading-tight">Your Reward Points</p>
+                <p className="text-lg font-black text-emerald-400">{pointsBalance} Points</p>
               </div>
             </div>
           </div>

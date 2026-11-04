@@ -1,7 +1,3 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
 
 import React, { useState } from "react";
 import { 
@@ -79,10 +75,10 @@ export default function TestHistoryView({
   };
 
   return (
-    <div className="space-y-8 max-w-5xl mx-auto p-4 lg:p-6 text-slate-100">
+    <div className="w-full px-4 sm:px-6 py-5 space-y-6 text-slate-100">
       
       {/* Page Header */}
-      <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-indigo-950/20 p-6 rounded-2xl border border-slate-800 shadow-xl flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+      <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-indigo-950/20 p-5 sm:p-6 rounded-2xl border border-slate-800 shadow-xl flex flex-col sm:flex-row justify-between sm:items-center gap-4">
         <div>
           <h2 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2.5">
             <History className="w-6 h-6 text-indigo-400" />

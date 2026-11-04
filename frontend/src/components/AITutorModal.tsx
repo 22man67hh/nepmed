@@ -1,7 +1,3 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
 
 import React, { useState, useEffect } from "react";
 import { Sparkles, X, BrainCircuit, ShieldAlert, GraduationCap, Copy, Check } from "lucide-react";

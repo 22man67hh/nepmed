@@ -1,7 +1,3 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
 
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -42,8 +38,6 @@ import {
   Menu,
   Sliders,
   LogOut,
-  Sun,
-  Moon,
   Package,
   Database,
   Users
@@ -424,7 +418,7 @@ export default function CustomAdminPanel({
   // CMS state bindings
   const [cmsBrandName, setCmsBrandName] = useState("");
   const [cmsLoginLabels, setCmsLoginLabels] = useState<any>({
-    brandName: "PrepzaNepal",
+    brandName: "NepMed",
     brandSubtitle: "Nepal's Premier Medical MCQs & License Prep Engine",
     signupGoogleButton: "Sign Up with Google",
     signinGoogleButton: "Sign In with Google",
@@ -1682,7 +1676,7 @@ export default function CustomAdminPanel({
               {/* Hide this div when collapsed */}
               {!isSidebarCollapsed && (
                 <div>
-                  <h2 className="font-bold text-sm text-white uppercase tracking-wider">{cmsBrandName || "PrepzaNepal"}</h2>
+                  <h2 className="font-bold text-sm text-white uppercase tracking-wider">{cmsBrandName || "NepMed"}</h2>
                   <span className="text-[10px] text-violet-400 font-semibold tracking-widest uppercase">Admin Panel</span>
                 </div>
               )}
@@ -1801,7 +1795,7 @@ export default function CustomAdminPanel({
               <span className={`${isSidebarCollapsed ? "hidden md:hidden" : "block"}`}>Global Database</span>
             </button>
 
-            <button
+            {/* <button
               type="button"
               onClick={() => { setAdminTab("review"); setIsMobileMenuOpen(false); }}
               className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${adminTab === "review"
@@ -1811,7 +1805,7 @@ export default function CustomAdminPanel({
             >
               <Sparkles className="w-4 h-4 text-violet-400 shrink-0" />
               <span className={`${isSidebarCollapsed ? "hidden md:hidden" : "block"}`}>Review Proposed Queue</span>
-            </button>
+            </button> */}
 
             <button
               type="button"
@@ -1884,7 +1878,7 @@ export default function CustomAdminPanel({
               {adminTab === "dashboard" && "🏠 Dashboard Overview"}
               {adminTab === "papers" && "📁 MCQ Papers Editor"}
               {adminTab === "questions" && "📂 Subject Folders Pool"}
-              {adminTab === "review" && "🚀 Review Proposed Queue"}
+              {/* {adminTab === "review" && "🚀 Review Proposed Queue"} */}
               {adminTab === "reports" && "🚩 Flagged Issues"}
               {adminTab === "exams" && "🎓 Target Board Exams"}
               {adminTab === "subjects" && "📚 Subjects Directory"}
@@ -1896,16 +1890,6 @@ export default function CustomAdminPanel({
           </div>
 
           <div className="flex items-center gap-4 text-xs font-sans">
-            {/* Theme Toggle Button */}
-            {setTheme && (
-              <button
-                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                className="p-1.5 rounded-xl bg-slate-950/60 hover:bg-slate-800/40 border border-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer flex items-center justify-center"
-                aria-label="Toggle Theme"
-              >
-                {theme === "dark" ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5 text-indigo-400" />}
-              </button>
-            )}
             {/* Target Exam display removed per instruction */}
           </div>
         </header>

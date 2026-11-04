@@ -1,7 +1,3 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
 
 import React, { useState, useEffect, useRef } from "react";
 import { 
@@ -452,7 +448,7 @@ export default function PracticeSession({
     }
 
     return (
-      <div className="max-w-4xl mx-auto p-4 lg:p-6 text-slate-100 space-y-6">
+      <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 py-5 text-slate-100 space-y-6">
         {/* Results Header */}
         <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl translate-x-1/3 -translate-y-1/3" />
@@ -954,7 +950,7 @@ export default function PracticeSession({
 
   // Active Session View
   return (
-    <div className="max-w-5xl mx-auto p-4 lg:p-6 text-slate-100 grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div className="w-full px-4 sm:px-6 py-5 text-slate-100 grid grid-cols-1 lg:grid-cols-3 gap-6">
       
       {/* Question Engine Area */}
       <div className="lg:col-span-2 space-y-4">
